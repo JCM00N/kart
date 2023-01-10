@@ -1,0 +1,31 @@
+import { DIMENSIONS } from "./consts";
+import type { Pixel, Point } from './types';
+
+export const clamp = (min: number, n: number, max: number) => Math.max(min, Math.min(n, max));
+
+export const notInBounds = (p: Point) => p.x > DIMENSIONS || p.y > DIMENSIONS || p.x < 0 || p.y < 0;
+
+export const forXY = (action: (action: string) => void) => ['x', 'y'].forEach(action);
+
+export const toXY = (e: MouseEvent) => ({x: e.clientX, y: e.clientY});
+
+export const add = (a: Point, b: Point = {x: 0, y: 0}) => ({x: a.x + b.x, y: a.y + b.y});
+export const sub = (a: Point, b: Point = {x: 0, y: 0}) => ({x: a.x - b.x, y: a.y - b.y});
+
+const LENGTH = Math.log10(DIMENSIONS);
+const pad = (n: number) => (n + '').padStart(LENGTH, '0');
+
+export async function createImage(data: Pixel[]) {
+  const pixelMap = data.reduce((acc, {key, rgb: {int}}) => ({...acc, [key]: int}), {});
+  
+  const img = new Uint8ClampedArray(DIMENSIONS * DIMENSIONS * 4);
+  for (let x = 0; x < DIMENSIONS; ++x) 
+    for (let y = 0; y < DIMENSIONS; ++y) {
+      const index = (y * DIMENSIONS + x) << 2;
+      for (let i = 2, pixel = pixelMap[`${pad(x)}${pad(y)}`] ?? 0; i >= 0; --i, pixel >>= 8)
+        img[index + i] = pixel % 256;
+      img[index + 3] = 255;
+    }
+
+  return createImageBitmap(new ImageData(img, DIMENSIONS, DIMENSIONS));
+}
