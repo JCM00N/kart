@@ -1,4 +1,4 @@
-import { fetch, wallet } from "pact-lang-api";
+import { fetch as pact, wallet } from "pact-lang-api";
 import { writable } from 'svelte/store';
 import { toast } from '@zerodevx/svelte-toast';
 import { ERROR_THEME, INFO_THEME } from './theme';
@@ -32,7 +32,7 @@ type Tx = ReturnType<typeof createCmd> & {caps: string[]};
 
 export const txStatus = writable('');
 
-export const localFetch = (cmd: string) => fetch.local(createCmd(cmd), ENDPOINT);
+export const localFetch = (cmd: string) => pact.local(createCmd(cmd), ENDPOINT);
 
 const WALLET_ERR = `
 <strong class="strong-text"><span class="emoji">⚠️</span> No wallet detected!</strong><br>
@@ -47,9 +47,18 @@ async function sendSigned(signedTx: any) {
   
   txStatus.set('sending');
   return wallet.sendSigned(signedTx, ENDPOINT)
-    .then(({ requestKeys: [key] }) => fetch.listen({ listen: key }, ENDPOINT))
+    .then((response: string | { requestKeys: [key: string] }) => {
+      if (typeof response === 'string') {
+          toast.push(response.includes('Keyset failure')
+            ? 'Keyset failure. Please make sure the keyset matches the signing account'
+            : 'An error occurred. Please try again later'
+            , {theme: ERROR_THEME, duration: 1e4}
+          );
+        throw {message: response};
+      }
+      else return pact.listen({ listen: response.requestKeys[0] }, ENDPOINT);
+    })
     .catch((err: Error) => {
-      toast.push('An error occurred. Please try again later', {theme: ERROR_THEME});
       console.error(err);
     });
 }
