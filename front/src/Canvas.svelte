@@ -115,8 +115,3 @@
   style:cursor={$isEyeDropping ? 'cell' : `grab${isDragging ? 'bing' : ''}`}
   on:mousedown={handlePointerDown} on:mouseup={handlePointerUp} on:pointermove={handlePointerMove}
   on:wheel|preventDefault={handleWheel} on:contextmenu|preventDefault={handleContextMenu} />
-<style>
-  canvas {
-    background: #111;
-  }
-</style>

@@ -8,6 +8,7 @@
   import { createCmd, localFetch, signAndSend } from './pact';
   import { SUCCESS_THEME } from './theme';
   import type { UserPixel } from './types';
+  import { SyncLoader } from 'svelte-loading-spinners'
   
   let showPixel = false;
   let userAssignedPixels = [] as UserPixel[];
@@ -42,7 +43,7 @@
 </script>
 
 {#await canvasPromise}
-  waiting
+  <div class="loader"><SyncLoader size={80} /></div>
 {:then data}
   <Sidebar open={showPixel}>
     <ParamPicker on:click={assignPixel} />
@@ -58,7 +59,10 @@
   {/await}
 {/await}
 
-<style>
+<style lang="scss">
+  .loader {
+    margin: auto;
+  }
   .bottom {
     --toastContainerBottom: 60px;
     --toastContainerTop: auto;
