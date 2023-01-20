@@ -1,7 +1,7 @@
 <script lang="ts">
   import ColorPicker, {CircleVariant} from "svelte-awesome-color-picker"
   import Wrapper from "./Wrapper.svelte";
-  import ColorPickerIcon from "./assets/color-picker.svg";
+  import Icon from "./components/Icon.svelte";
   import IconButton from "./components/IconButton.svelte";
   import { isEyeDropping, pickedHexColor, hoveredPixelColor, pickedPixelPosition, accountName } from "./store";
   import { DIMENSIONS } from "./consts";
@@ -29,7 +29,7 @@
   (<input type="number" min="0" max={DIMENSIONS} bind:value={$pickedPixelPosition.x} />,
   <input type="number" min="0" max={DIMENSIONS} bind:value={$pickedPixelPosition.y} />)
   <IconButton color={!eyeDropper && $hoveredPixelColor} active={$isEyeDropping} on:click={pickColor}>
-    <ColorPickerIcon width=32 />
+    <Icon name="color-picker" width=32 />
   </IconButton>
 </div>
 <ColorPicker bind:hex={$pickedHexColor} isInput={false} isAlpha={false} components={{

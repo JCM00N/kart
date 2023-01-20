@@ -9,6 +9,7 @@
   import { SUCCESS_THEME } from './theme';
   import type { UserPixel } from './types';
   import { SyncLoader } from 'svelte-loading-spinners'
+  import Icon from './components/Icon.svelte';
   
   let showPixel = false;
   let userAssignedPixels = [] as UserPixel[];
@@ -58,8 +59,17 @@
     </div>
   {/await}
 {/await}
+<a href="https://github.com/JCM00N/kart">
+  <Icon name="github" />
+</a>
 
 <style lang="scss">
+  a {
+    position: absolute;
+    width: 32px;
+    right: 40px;
+    bottom: 20px;
+  }
   .loader {
     margin: auto;
   }
