@@ -15,6 +15,7 @@
     "@zerodevx/svelte-toast": "^0.7.2",
     "node-sass": "^7.0.3",
     "svelte": "^3.44.0",
+    "svelte-icons": "^2.1.0",
     "svelte-awesome-color-picker": "^1.2.3",
     "svelte-check": "^2.2.7",
     "svelte-loading-spinners": "^0.1.7",

@@ -8,8 +8,8 @@
   import { createCmd, localFetch, signAndSend } from './pact';
   import { SUCCESS_THEME } from './theme';
   import type { UserPixel } from './types';
-  import { SyncLoader } from 'svelte-loading-spinners'
-  import Icon from './components/Icon.svelte';
+  import { SyncLoader } from 'svelte-loading-spinners';
+  import FaGithub from 'svelte-icons/fa/FaGithub.svelte';
   
   let showPixel = false;
   let userAssignedPixels = [] as UserPixel[];
@@ -60,11 +60,12 @@
   {/await}
 {/await}
 <a href="https://github.com/JCM00N/kart">
-  <Icon name="github" />
+  <FaGithub />
 </a>
 
 <style lang="scss">
   a {
+    color: white;
     position: absolute;
     width: 32px;
     right: 40px;
