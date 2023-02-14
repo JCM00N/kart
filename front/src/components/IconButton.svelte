@@ -1,12 +1,16 @@
 <script lang="ts">
   export let active = false;
-  export let color: Uint8ClampedArray;
-  export let size: number;
+  export let color: Uint8ClampedArray = undefined;
+  export let size = 32;
 </script>
 
-<button class:has-color={color} class:active on:click style:outline-color={`rgba(${color})`}>
-  <span style="display:flex; padding:4px; width: {size}px"><slot /></span>
-</button>
+<button
+  class:has-color={color}
+  class:active
+  on:click
+  style:outline-color={`rgba(${color})`}
+  {...$$props}
+><span style="display:flex; padding:4px; width: {size}px"><slot /></span></button>
 
 <style lang="scss">
   button {

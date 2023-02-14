@@ -1,13 +1,15 @@
 <script lang="ts">
+  import { createEventDispatcher } from "svelte";
   import ColorPicker, {CircleVariant} from "svelte-awesome-color-picker"
   import Wrapper from "./Wrapper.svelte";
-  import MdColorize from 'svelte-icons/md/MdColorize.svelte'
   import IconButton from "./components/IconButton.svelte";
   import { isEyeDropping, pickedHexColor, hoveredPixelColor, pickedPixelPosition, accountName } from "./store";
   import { DIMENSIONS } from "./consts";
   import SendButton from "./SendButton.svelte";
-  
+  import MdColorize from 'svelte-icons/md/MdColorize.svelte'
+  import TiArrowBack from 'svelte-icons/ti/TiArrowBack.svelte'  
 
+  const dispatch = createEventDispatcher();
   const eyeDropper = 'EyeDropper' in window && new window.EyeDropper();
 
   async function pickColor() {
@@ -25,10 +27,13 @@
   }
 </script>
 
+<IconButton style="position: absolute; top: 4px; right: 4px; transform: scale(-1, 1)" on:click={
+  () => dispatch('close')
+  }><TiArrowBack /></IconButton>
 <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
   (<input type="number" min="0" max={DIMENSIONS} bind:value={$pickedPixelPosition.x} />,
   <input type="number" min="0" max={DIMENSIONS} bind:value={$pickedPixelPosition.y} />)
-  <IconButton size={32} active={$isEyeDropping} on:click={pickColor} color={
+  <IconButton active={$isEyeDropping} on:click={pickColor} color={
     !eyeDropper && $hoveredPixelColor
   }><MdColorize /></IconButton>
 </div>

@@ -47,7 +47,7 @@
   <div class="loader"><SyncLoader size={80} /></div>
 {:then data}
   <Sidebar open={showPixel}>
-    <ParamPicker on:click={assignPixel} />
+    <ParamPicker on:click={assignPixel} on:close={() => showPixel = false} />
   </Sidebar>
   <Canvas {data} {userAssignedPixels} bind:showPixel />
   {#await import('@zerodevx/svelte-toast') then {SvelteToast}}

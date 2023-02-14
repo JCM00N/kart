@@ -12,7 +12,7 @@
     background-color: white;
     border-radius: 2px;
   	transition: right 0.3s ease-in-out;
-    padding: 2rem;
+    padding: 4rem 2rem;
   }
   
   .open {
