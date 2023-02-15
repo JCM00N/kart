@@ -93,7 +93,12 @@
 
         [4, 10, 16].forEach(r => {
           context.beginPath();
-          context.arc(pixelScreenPos.x + .5, pixelScreenPos.y + .5, r, 0, CIRCLE);
+          
+          context.lineDashOffset = now.getMilliseconds() / 125;
+          context.lineWidth = 1.5;
+          context.setLineDash(r === 16 ? [2] : r === 10 ? [3.9] : []);
+
+          context.arc(pixelScreenPos.x + .5, pixelScreenPos.y + .5, r, 0, CIRCLE, r === 10);
           context.stroke();
         });
         now.getSeconds() % 2 && context.fillRect(pixelScreenPos.x, pixelScreenPos.y, 1, 1);
