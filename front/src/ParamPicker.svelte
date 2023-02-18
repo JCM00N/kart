@@ -40,7 +40,6 @@
 <ColorPicker bind:hex={$pickedHexColor} isInput={false} isAlpha={false} components={{
   ...CircleVariant, wrapper: Wrapper
 }} />
-{$accountName}
 <SendButton on:click />
 
 <style lang="scss">
