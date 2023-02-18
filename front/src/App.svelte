@@ -5,13 +5,17 @@
   import ParamPicker from './ParamPicker.svelte';
   import { toast } from '@zerodevx/svelte-toast';
   import { accountName, cooldownDate, pickedHexColor, pickedPixelPosition } from './store';
-  import { createCmd, localFetch, signAndSend } from './pact';
+  import { CHAIN_ID, createCmd, localFetch, signAndSend } from './pact';
   import { SUCCESS_THEME } from './theme';
   import type { UserPixel } from './types';
   import { SyncLoader } from 'svelte-loading-spinners';
   import FaGithub from 'svelte-icons/fa/FaGithub.svelte';
+  import Dialog from './components/Dialog.svelte';
+  import MdHelp from 'svelte-icons/md/MdHelp.svelte'
+  import MdMouse from 'svelte-icons/md/MdMouse.svelte'
   
   let showPixel = false;
+  let dialog: HTMLDialogElement;
   let userAssignedPixels = [] as UserPixel[];
   const canvasPromise = localFetch('get-canvas').then(({ result: { data } }) => createImage(data));
 
@@ -40,9 +44,7 @@
         toast.push('An error has occurred, please try again later')
     })
   }
-
 </script>
-
 {#await canvasPromise}
   <div class="loader"><SyncLoader size={80} /></div>
 {:then data}
@@ -59,20 +61,42 @@
     </div>
   {/await}
 {/await}
-<a href="https://github.com/JCM00N/kart">
+<a class="icon github" href="https://github.com/JCM00N/kart">
   <FaGithub />
 </a>
+<button class="icon" on:click={() => dialog.showModal()}>
+  <MdHelp />
+</button>
+<Dialog bind:dialog title="Hi there!">
+  <p>Use the cursor with by holding <kbd>Left-click</kbd> to drag the canvas around, and <kbd>Scroll</kbd> to zoom.</p>
+  <p>Display the Drawing Drawer by either pressing the <kbd>D</kbd> key or <kbd>Right-click</kbd>ing <span><MdMouse /></span> anywhere on the canvas!</p>
+  <p>Once you've selected your position and color, simply click "Send" to Sign your transaction and draw your pixel</p>
+  <p>Just make sure you have some KDA on chain {CHAIN_ID} to pay for the gas (0.01 should be more than enough <span class="emoji">☺️</span>)</p>
+</Dialog>
 
 <style lang="scss">
-  a {
+  .icon {
     color: white;
     position: absolute;
     width: 32px;
-    right: 40px;
     bottom: 20px;
+    left: 40px;
+    background-color: transparent;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    &.github{
+      left: unset;
+      right: 40px;
+    }
   }
   .loader {
     margin: auto;
+  }
+  span {
+    display: inline-block;
+    width: 24px;
+    vertical-align: middle;
   }
   .bottom {
     --toastContainerBottom: 60px;

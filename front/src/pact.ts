@@ -5,7 +5,7 @@ import { ERROR_THEME, INFO_THEME } from './theme';
 import { accountName } from "./store";
 
 const MODULE_NAME = 'free.d4';
-const CHAIN_ID = '1';
+export const CHAIN_ID = '1';
 const GAS_PRICE = 1e-8;
 const TTL = 600;
 const ENDPOINT = `https://api.testnet.chainweb.com/chainweb/0.0/testnet04/chain/${CHAIN_ID}/pact`;
