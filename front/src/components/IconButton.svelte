@@ -14,6 +14,7 @@
 
 <style lang="scss">
   button {
+    aspect-ratio: 1;
     border-radius: 2rem;
     outline-style: dashed;
     background-color: #f5f5f5;
