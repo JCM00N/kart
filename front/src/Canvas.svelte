@@ -115,7 +115,8 @@
   });
 </script>
 
-<svelte:window bind:innerWidth={width} bind:innerHeight={height} />
+<svelte:window bind:innerWidth={width} bind:innerHeight={height}
+  on:keydown={e => e.key === 'd' && handleContextMenu()} />
 <canvas bind:this={canvas} {width} {height}
   style:cursor={$isEyeDropping ? 'cell' : `grab${isDragging ? 'bing' : ''}`}
   on:mousedown={handlePointerDown} on:mouseup={handlePointerUp} on:pointermove={handlePointerMove}
