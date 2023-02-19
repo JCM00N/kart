@@ -48,6 +48,7 @@
     margin: 12px 0 0 12px;
   }
   div {
+    max-width: 100%;
     width: 30em;
     padding: 0 0 1.25em;
     border-radius: 5px;

@@ -117,7 +117,7 @@
 
 <svelte:window bind:innerWidth={width} bind:innerHeight={height}
   on:keydown={e => e.key === 'd' && handleContextMenu()} />
-<canvas bind:this={canvas} {width} {height}
+<canvas bind:this={canvas} {width} {height} style="touch-action: none"
   style:cursor={$isEyeDropping ? 'cell' : `grab${isDragging ? 'bing' : ''}`}
-  on:mousedown={handlePointerDown} on:mouseup={handlePointerUp} on:pointermove={handlePointerMove}
+  on:pointerdown={handlePointerDown} on:pointerup={handlePointerUp} on:pointermove={handlePointerMove}
   on:wheel|preventDefault={handleWheel} on:contextmenu|preventDefault={handleContextMenu} />
