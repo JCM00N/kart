@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { CIRCLE, DIMENSIONS, MAX_ZOOM, MIN_ZOOM, SCROLL_SENSITIVITY } from "./consts";
   import { add, clamp, forXY, notInBounds, sub, toXY } from "./utility";
-  import { isEyeDropping, pickedHexColor, hoveredPixelColor, pickedPixelPosition } from "./store";
+  import { isEyeDropping, pickedHexColor, hoveredPixelColor, pickedPixelPosition, springedPixelPosition } from "./store";
   import type { UserPixel } from "./types";
 
   export let data: ImageBitmap;
@@ -26,7 +26,7 @@
     x: Math.round((mousePos.x - offset.x) / zoom),
     y: Math.round((mousePos.y - offset.y) / zoom),
   };
-  $: pixelScreenPos = add($pickedPixelPosition, origin);
+  $: pixelScreenPos = add($springedPixelPosition, origin);
   $: canvasPixelPos = sub(adjustedMousePos, origin);
   
   function handlePointerDown(e: MouseEvent) {
@@ -71,11 +71,43 @@
     forXY(xy => offset[xy] += zoomChange * adjustedMousePos[xy])
   }
   
+  function drawTarget(context: CanvasRenderingContext2D) {
+    const now = new Date();
+    context.fillStyle = context.strokeStyle = $pickedHexColor;
+
+    [4, 10, 16].forEach(r => {
+      context.beginPath();
+      
+      context.lineDashOffset = now.getMilliseconds() / 125;
+      context.lineWidth = 1.5;
+      context.setLineDash(r === 16 ? [2] : r === 10 ? [3.9] : []);
+
+      context.arc(pixelScreenPos.x + .5, pixelScreenPos.y + .5, r, 0, CIRCLE, r === 10);
+      context.stroke();
+    });
+    
+    context.setLineDash([]);
+    for (let i = 0; i < 4; ++i) {
+      const funcs = [Math.sin, Math.cos];
+      const delta = -(now.getTime() % 3100) / 1960;
+      const [sins, coss] = i > 1 ? funcs.reverse() : funcs;
+      const yDiff = sins(delta) * (i % 2 ? -1 : 1);
+      const xDiff = coss(delta) * ([1, 2].includes(i) ? 1 : -1);
+
+      context.beginPath();
+      context.moveTo(pixelScreenPos.x + 20 * xDiff, pixelScreenPos.y - 20 * yDiff);
+      context.lineTo(pixelScreenPos.x + 25 * xDiff, pixelScreenPos.y - 25 * yDiff);
+      context.stroke();
+    }
+    
+    now.getSeconds() % 2 && context.fillRect(pixelScreenPos.x, pixelScreenPos.y, 1, 1);
+    context.restore();
+  }
+
   onMount(() => {
     const context = canvas.getContext('2d');
     
     let anime = requestAnimationFrame(async function update() {
-      const now = new Date();
       context.save();
       context.imageSmoothingEnabled = false;
       context.clearRect(0, 0, width, height);
@@ -88,23 +120,7 @@
         context.fillRect(origin.x + x, origin.y + y, 1, 1);
       });
       
-      if (showPixel) {
-        context.fillStyle = context.strokeStyle = $pickedHexColor;
-
-        [4, 10, 16].forEach(r => {
-          context.beginPath();
-          
-          context.lineDashOffset = now.getMilliseconds() / 125;
-          context.lineWidth = 1.5;
-          context.setLineDash(r === 16 ? [2] : r === 10 ? [3.9] : []);
-
-          context.arc(pixelScreenPos.x + .5, pixelScreenPos.y + .5, r, 0, CIRCLE, r === 10);
-          context.stroke();
-        });
-        now.getSeconds() % 2 && context.fillRect(pixelScreenPos.x, pixelScreenPos.y, 1, 1);
-      }
-
-      context.restore();
+      if (showPixel) drawTarget(context);
       if ($isEyeDropping)
         $hoveredPixelColor = context.getImageData(mousePos.x, mousePos.y, 1, 1).data;
       
