@@ -17,6 +17,7 @@
   
   let width = window.innerWidth;
 	let height = window.innerHeight;
+  const keyPresses = {} as {[key: string]: boolean | undefined};
   
   let canvas: HTMLCanvasElement;
   let zoom = 1;
@@ -74,6 +75,19 @@
     if (zoom === prevZoom) return;
     forXY(xy => offset[xy] += zoomChange * adjustedMousePos[xy])
   }
+
+  function handleKeyDown(e: KeyboardEvent) {
+    const {key} = e;
+    key === 'd' && handleOpenMenu();
+    keyPresses[key] = true;
+    if (showPixel) {
+      keyPresses.ArrowRight && ++$pickedPixelPosition.x;
+      keyPresses.ArrowLeft && --$pickedPixelPosition.x;
+      keyPresses.ArrowUp && --$pickedPixelPosition.y;
+      keyPresses.ArrowDown && ++$pickedPixelPosition.y;
+    }
+  }
+
   onMount(() => {
     const context = canvas.getContext('2d');
     
@@ -108,7 +122,8 @@
 </script>
 
 <svelte:window bind:innerWidth={width} bind:innerHeight={height}
-  on:keydown={e => e.key === 'd' && handleOpenMenu()} />
+  on:keydown={handleKeyDown} on:keyup={e => delete keyPresses[e.key]}
+/>
 <canvas bind:this={canvas} {width} {height} style="touch-action: none"
   style:cursor={$isEyeDropping ? 'cell' : `grab${isDragging ? 'bing' : ''}`}
   on:pointerdown={handlePointerDown} on:pointerup={() => isDragging = false}
