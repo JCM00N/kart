@@ -65,7 +65,7 @@
           )
             (enforce (>= nRGB 0) ERR)
             (enforce (< nRGB MAX_RGB_VALUE) ERR)
-            (write pixels (+ (pad x) (pad y)) { 'rgb: nRGB, 'artist: artist })
+            (insert pixels (+ (pad x) (pad y)) { 'rgb: nRGB, 'artist: artist })
             (write artist-cooldowns artist { 'end-time: (add-time (get-current-time) (minutes 1)) })
         )
     )

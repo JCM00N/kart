@@ -17,6 +17,7 @@ function localStorageWritable(key: string) {
 
 export const pickedHexColor = writable() as Writable<string>;
 export const isEyeDropping = writable(false);
+export const isPixelTaken = writable(false);
 export const hoveredPixelColor = writable() as Writable<Uint8ClampedArray>;
 export const pickedPixelPosition = writable({x: 0, y: 0});
 export const springedPixelPosition = spring({x: 0, y: 0}, {stiffness: .1, damping: .43});

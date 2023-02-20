@@ -17,7 +17,7 @@
   let showPixel = false;
   let dialog: HTMLDialogElement;
   let userAssignedPixels = [] as UserPixel[];
-  const canvasPromise = localFetch('get-canvas').then(({ result: { data } }) => createImage(data));
+  const dataPromise = localFetch('get-canvas').then(({ result: { data } }) => createImage(data));
 
   const updateCooldown = () => localFetch(`get-artist-cooldown '${$accountName}`).then(
     ({ result: { data } }) => cooldownDate.set((Date.now() + data * 1e3) + '')
@@ -45,13 +45,13 @@
     })
   }
 </script>
-{#await canvasPromise}
+{#await dataPromise}
   <div class="loader"><SyncLoader size={80} /></div>
-{:then data}
+{:then [pixelMap, data]}
   <Sidebar open={showPixel}>
     <ParamPicker on:click={assignPixel} on:close={() => showPixel = false} />
   </Sidebar>
-  <Canvas {data} {userAssignedPixels} bind:showPixel />
+  <Canvas {pixelMap} {data} {userAssignedPixels} bind:showPixel />
   {#await import('@zerodevx/svelte-toast') then {SvelteToast}}
     <SvelteToast options={{ pausable: true }} />
     <div class="bottom">

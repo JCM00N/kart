@@ -3,7 +3,7 @@
   import ColorPicker, {CircleVariant} from "svelte-awesome-color-picker"
   import Wrapper from "./Wrapper.svelte";
   import IconButton from "./components/IconButton.svelte";
-  import { isEyeDropping, pickedHexColor, hoveredPixelColor, pickedPixelPosition, accountName } from "./store";
+  import { isEyeDropping, pickedHexColor, hoveredPixelColor, pickedPixelPosition } from "./store";
   import { DIMENSIONS } from "./consts";
   import SendButton from "./SendButton.svelte";
   import MdColorize from 'svelte-icons/md/MdColorize.svelte'

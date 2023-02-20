@@ -27,5 +27,5 @@ export async function createImage(data: Pixel[]) {
       img[index + 3] = 255;
     }
 
-  return createImageBitmap(new ImageData(img, DIMENSIONS, DIMENSIONS));
+  return [pixelMap, await createImageBitmap(new ImageData(img, DIMENSIONS, DIMENSIONS))];
 }

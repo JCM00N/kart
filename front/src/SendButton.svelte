@@ -3,7 +3,7 @@
   import { Moon } from 'svelte-loading-spinners'
   import { txStatus } from "./pact";
   import { onDestroy } from "svelte";
-  import { cooldownDate } from "./store";
+  import { cooldownDate, isPixelTaken } from "./store";
 
   let count = 0, interval = 0;
   
@@ -27,12 +27,14 @@
   
 </script>
 
-<Button on:click disabled={$txStatus || count}
+<Button on:click disabled={$txStatus || count || $isPixelTaken}
   style={`margin-top: 16px; ${$txStatus && 'padding: 8px'}`}>
   {#if count}
     {m}:{s}
   {:else if $txStatus}
     <Moon size="36" color="black" />
+  {:else if $isPixelTaken}
+    Occupied Spot
   {:else}
     Send
   {/if}
