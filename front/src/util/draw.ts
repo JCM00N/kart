@@ -35,5 +35,4 @@ export function drawTarget(context: CanvasRenderingContext2D, position: {x: numb
   }
   
   now.getSeconds() % 2 && context.fillRect(position.x, position.y, 1, 1);
-  context.restore();
 }

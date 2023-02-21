@@ -111,6 +111,7 @@
       if ($isEyeDropping)
         $hoveredPixelColor = context.getImageData(mousePos.x, mousePos.y, 1, 1).data;
       
+      context.restore();
       anime = requestAnimationFrame(update);
     });
   
