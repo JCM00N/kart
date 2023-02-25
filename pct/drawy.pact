@@ -20,7 +20,7 @@
     )
     (let ((accountLength (length accountId)))
       (enforce (> accountLength 2) (format "Account ID '{}' lower than min length" [accountId]))
-      (enforce (< accountLength 255) (format "Account ID exceeds max length: {}" [accountId]))
+      (enforce (< accountLength 257) (format "Account ID exceeds max length: {}" [accountId]))
     )
   )
 
