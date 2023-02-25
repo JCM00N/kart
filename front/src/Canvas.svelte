@@ -81,10 +81,10 @@
     key === 'd' && handleOpenMenu();
     keyPresses[key] = true;
     if (showPixel) {
-      keyPresses.ArrowRight && ++$pickedPixelPosition.x;
-      keyPresses.ArrowLeft && --$pickedPixelPosition.x;
-      keyPresses.ArrowUp && --$pickedPixelPosition.y;
-      keyPresses.ArrowDown && ++$pickedPixelPosition.y;
+      keyPresses.ArrowRight && $pickedPixelPosition.x + 1 < DIMENSIONS && ++$pickedPixelPosition.x;
+      keyPresses.ArrowLeft &&  $pickedPixelPosition.x > 0 && --$pickedPixelPosition.x;
+      keyPresses.ArrowUp && $pickedPixelPosition.y > 0 && --$pickedPixelPosition.y;
+      keyPresses.ArrowDown &&  $pickedPixelPosition.y + 1 < DIMENSIONS && ++$pickedPixelPosition.y;
     }
   }
 
