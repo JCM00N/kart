@@ -34,7 +34,9 @@
   };
   $: pixelScreenPos = add($springedPixelPosition, origin);
   $: canvasPixelPos = sub(adjustedMousePos, origin);
-  const unsub = pickedPixelPosition.subscribe(pos => $isPixelTaken = pixelMap[`${pos.x}${pos.y}`]);
+  const unsub = pickedPixelPosition.subscribe(pos =>
+    $isPixelTaken = pixelMap[`${pos.x}_${pos.y}`] !== undefined
+  );
   
   function handlePointerDown(e: MouseEvent) {
     if (e.button === 2) return; // Right click
