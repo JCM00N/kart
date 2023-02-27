@@ -15,13 +15,13 @@ const KEY_PAIR = {
   secretKey: 'e0c7e25b7922a847b9c95d6e199fbcbc979be2dc9e13cfead9d81c4a65b13f81'
 };
 
-export const createCmd = (cmd?: string) => ({
+export const createCmd = (cmd?: string, gasLimit = 1e4) => ({
   pactCode: `(${MODULE_NAME}.${cmd})`,
   keyPairs: KEY_PAIR,
   meta: {
     chainId: CHAIN_ID,
     sender: '',
-    gasLimit: 1e5,
+    gasLimit,
     gasPrice: GAS_PRICE,
     ttl: TTL,
     creationTime: 0,
@@ -32,7 +32,7 @@ type Tx = ReturnType<typeof createCmd> & {caps: string[]};
 
 export const txStatus = writable('');
 
-export const localFetch = (cmd: string) => pact.local(createCmd(cmd), ENDPOINT);
+export const localFetch = (cmd: string) => pact.local(createCmd(cmd, 1e8), ENDPOINT);
 
 const WALLET_ERR = `
 <strong class="strong-text"><span class="emoji">⚠️</span> No wallet detected!</strong><br>
