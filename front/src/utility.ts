@@ -16,7 +16,9 @@ const LENGTH = Math.log10(DIMENSIONS);
 const pad = (n: number) => (n + '').padStart(LENGTH, '0');
 
 export async function createImage(data: Pixel[]) {
-  const pixelMap = data.reduce((acc, {key, rgb: {int}}) => ({...acc, [key]: int}), {});
+  const pixelMap = {};
+  for (const {key, rgb: {int}} of data)
+    pixelMap[key] = int;
   
   const img = new Uint8ClampedArray(DIMENSIONS * DIMENSIONS * 4);
   for (let x = 0; x < DIMENSIONS; ++x) 
