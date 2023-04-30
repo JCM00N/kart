@@ -1,8 +1,8 @@
 (define-keyset "free.rog-keyset")
-(module d4 GOV
+(module d5 GOV
   
   (defcap GOV () (enforce-keyset "free.rog-keyset"))
-  (defschema pixel rgb:integer artist:string)
+  (defschema pixel rgb:integer)
   (defschema artist-cooldown end-time:time)
   (deftable pixels:{pixel})
   (deftable artist-cooldowns:{artist-cooldown})
@@ -39,35 +39,41 @@
     )
   )
 
-  (defun pad (num:integer)
-    (let ((str (int-to-str 10 num)))
-      (+ (concat (make-list (- COORDINATE_LENGTH (length str)) "0")) str)
-    )
+  (defun assign-pixel (rgb: string x:integer y:integer)
+    (assign-pixel-as (at 'sender (chain-data)) rgb x y)
   )
 
-  (defun assign-pixel (rgb:string x:integer y:integer)
+  (defun assign-pixel-as (artist:string rgb:string x:integer y:integer)
     (enforce (>= x 0) POSITIVE_CORRDINATE_ERR)
     (enforce (>= y 0) POSITIVE_CORRDINATE_ERR)
     (validate-coordinate 'X x)
     (validate-coordinate 'Y y)
-    (let* (
-        (artist (at 'sender (chain-data)))
-        (cooldown (get-artist-cooldown artist))
+    (validate-account-id artist)
+    (let ((cooldown (get-artist-cooldown artist)))
+      (enforce-one
+        (format "You need to wait {} more seconds before making a new assigninment" [cooldown])
+        [(enforce (<= cooldown 0.0) "") (enforce-guard "free.rog-keyset")]
       )
-        (validate-account-id artist)
-        (enforce-one
-          (format "You need to wait {} more seconds before making a new assigninment" [cooldown])
-          [(enforce (<= cooldown 0.0) "") (enforce-guard "free.rog-keyset")]
+      (let (
+          (nRGB (str-to-int 16 rgb))
+          (ERR (format "{}{}" [INVALID_RGB_ERR rgb]))
         )
-        (let (
-            (nRGB (str-to-int 16 rgb))
-            (ERR (+ INVALID_RGB_ERR rgb))
-          )
-            (enforce (>= nRGB 0) ERR)
-            (enforce (< nRGB MAX_RGB_VALUE) ERR)
-            (insert pixels (+ (pad x) (pad y)) { 'rgb: nRGB, 'artist: artist })
-            (write artist-cooldowns artist { 'end-time: (add-time (get-current-time) (minutes 1)) })
+          (enforce (>= nRGB 0) ERR)
+          (enforce (< nRGB MAX_RGB_VALUE) ERR)
+          (insert pixels (format "{}_{}" [x y]) { 'rgb: nRGB })
+          (write artist-cooldowns artist { 'end-time: (add-time (get-current-time) (minutes 1)) })
+      )
+    )
+  )
+
+  (defun get-section (fromX:integer fromY:integer toX:integer toY:integer)
+    (map 
+      (lambda (pos) (with-default-read pixels pos { "rgb": 0 } { "rgb" := rgb } rgb))
+      (fold (+) []
+        (map (lambda (x) (map (lambda (y) (format "{}_{}" [x, y]))
+          (enumerate fromY toY))) (enumerate fromX toX)
         )
+      )
     )
   )
 
@@ -81,13 +87,6 @@
     (fold-db pixels 
       (constantly true)
       (lambda (key obj) (+ {'key: key} (take ['rgb] obj)))
-    )
-  )
-
-  (defun get-canvas-with-artists ()
-    (fold-db pixels 
-      (constantly true)
-      (lambda (key obj) (+ {'key: key} (take ['artist 'rgb] obj)))
     )
   )
 )
