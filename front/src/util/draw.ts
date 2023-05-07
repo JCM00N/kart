@@ -1,4 +1,5 @@
 import { CIRCLE } from "../consts";
+import type { Point } from "src/types";
 
 const CIRCLES = Object.entries({
   4: undefined,
@@ -6,7 +7,7 @@ const CIRCLES = Object.entries({
   16: 2,
 }).map(([k, v]) => ([+k, v]));
 
-export function drawTarget(context: CanvasRenderingContext2D, position: {x: number, y: number}) {
+export function drawTarget(context: CanvasRenderingContext2D, position: Point, isSigning: boolean) {
   const now = new Date();
 
   CIRCLES.forEach(([r, dashSize]) => {
@@ -19,8 +20,8 @@ export function drawTarget(context: CanvasRenderingContext2D, position: {x: numb
     context.arc(position.x + .5, position.y + .5, r, 0, CIRCLE, r === 10);
     context.stroke();
   });
-  
-  context.setLineDash([]);
+
+  !isSigning && context.setLineDash([]);
   for (let i = 0; i < 4; ++i) {
     const funcs = [Math.sin, Math.cos];
     const delta = -(now.getTime() % 3100) / 1960;

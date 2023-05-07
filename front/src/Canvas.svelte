@@ -8,7 +8,7 @@
     pickedPixelPosition, springedPixelPosition
   } from "./store";
   import type { UserPixel } from "./types";
-  import { drawTarget } from "./util/draw";
+  import { txStatus } from "./pact";
 
   export let data: ImageBitmap;
   export let showPixel: boolean;
@@ -108,7 +108,7 @@
       
       if (showPixel) {
         context.fillStyle = context.strokeStyle = $pickedHexColor;
-        drawTarget(context, pixelScreenPos);
+        drawTarget(context, pixelScreenPos, $txStatus === 'signing');
       }
       if ($isEyeDropping)
         $hoveredPixelColor = context.getImageData(mousePos.x, mousePos.y, 1, 1).data;
