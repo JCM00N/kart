@@ -2,7 +2,7 @@ import { CIRCLE } from "../consts";
 import type { Point } from "src/types";
 
 const CIRCLES = Object.entries({
-  4: undefined,
+  4: 0,
   10: 3.9,
   16: 2,
 }).map(([k, v]) => ([+k, v]));
