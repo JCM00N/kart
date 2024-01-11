@@ -9,6 +9,7 @@
   } from "./store";
   import type { UserPixel } from "./types";
   import { txStatus } from "./pact";
+  import { drawTarget } from "./util/draw";
 
   export let data: ImageBitmap;
   export let showPixel: boolean;
