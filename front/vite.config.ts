@@ -2,23 +2,27 @@ import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  mode: 'development',
-  plugins: [
-    svelte({
-      compilerOptions: {
-        dev: true,
-      }
-    }),
-  ],
+export default defineConfig(({command}) => {
+  const isDev = command === 'serve';
   
-  server: {
-    watch: {
-      ignored: ['!**/node_modules/chainweb/**']
-    },    
-    port: 8111
-  },
-  optimizeDeps: {
-    exclude: ['chainweb.js'],
+  return {
+    mode: isDev ? 'development' : 'production',
+    plugins: [
+      svelte({
+        compilerOptions: {
+          dev: isDev,
+        }
+      }),
+    ],
+    
+    server: {
+      watch: {
+        ignored: ['!**/node_modules/chainweb/**']
+      },    
+      port: 8111
+    },
+    optimizeDeps: {
+      exclude: ['chainweb.js'],
+    }
   }
-})
+});
