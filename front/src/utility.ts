@@ -1,5 +1,5 @@
+import { writable } from "svelte/store";
 import { DIMENSIONS } from "./consts";
-import { pixelMap } from "./store";
 import type { Pixel, Point } from './types';
 
 export const clamp = (min: number, n: number, max: number) => Math.max(min, Math.min(n, max));
@@ -30,23 +30,26 @@ export async function createImage(data: Pixel[]) {
   return [pixelMap, await createImageBitmap(new ImageData(img, DIMENSIONS, DIMENSIONS))];
 }
 
-export const pixelMap = {};
-const img = new Uint8ClampedArray(DIMENSIONS * DIMENSIONS * 4);
-export const image = new ImageData(img, DIMENSIONS, DIMENSIONS);
-image.data.set()
-export async function createImage2(data: any[], fromX: number, fromY: number, size: number) {
+const pxlMap = {};
+const imageData = new Uint8ClampedArray(DIMENSIONS * DIMENSIONS * 4);
+export const img = writable(imageData);
+export const pixelMap = writable(pxlMap);
+
+export function createImage2(data: any[], fromX: number, fromY: number, size: number) {
   const toX = fromX + size, toY = fromY + size;
   for (let x = fromX, i = 0; x < toX; ++x)
     for (let y = fromY; y < toY; ++y, ++i) {
-      let pixel = data[i].int;
+      let PIXEL = data[i].int, pixel = PIXEL;
       const index = (y * DIMENSIONS + x) << 2;
 
-      for (let i = 2; i >= 0; --i, pixel >>= 8)
-        img[index + i] = pixel % 256;
-      img[index + 3] = 255;
+      for (let n = 2; n >= 0; --n, pixel >>= 8)
+        imageData[index + n] = pixel % 256;
+      imageData[index + 3] = 255;
 
-      if (pixel)
-        pixelMap[`${x}_${y}`] = pixel;
+      if (PIXEL)
+        pxlMap[`${x}_${y}`] = PIXEL;
     }
-  return [pixelMap, await createImageBitmap(new ImageData(img, DIMENSIONS, DIMENSIONS))];
+
+    pixelMap.set(pxlMap);
+    img.set(imageData);
 }

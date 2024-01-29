@@ -1,6 +1,6 @@
  <script lang="ts">
   import Canvas from './Canvas.svelte';
-  import { createImage, createImage2 } from './utility';
+  import { createImage, createImage2, img, pixelMap } from './utility';
   import Sidebar from './Sidebar.svelte';
   import ParamPicker from './ParamPicker.svelte';
   import { toast } from '@zerodevx/svelte-toast';
@@ -13,15 +13,17 @@
   import Dialog from './components/Dialog.svelte';
   import MdHelp from 'svelte-icons/md/MdHelp.svelte'
   import MdMouse from 'svelte-icons/md/MdMouse.svelte'
-  import { AMOUNT_OF_FETCHES, DIMENSIONS, SECTION_SIZE } from './consts';
+  import { DIMENSIONS, SECTION_SIZE } from './consts';
   
   let showPixel = false;
   let dialog: HTMLDialogElement;
   let userAssignedPixels = [] as UserPixel[];
   let dataPromise: any;
+  $: image = createImageBitmap(new ImageData($img, DIMENSIONS, DIMENSIONS));
+    
   for(let x = 0; x < DIMENSIONS; x += SECTION_SIZE)
     for(let y = 0; y < DIMENSIONS; y += SECTION_SIZE)
-      dataPromise = localFetch(`get-section ${x} ${y} ${x + SECTION_SIZE} ${y + SECTION_SIZE}`)
+      dataPromise = localFetch(`get-section ${x} ${y} ${x + SECTION_SIZE - 1} ${y + SECTION_SIZE - 1}`)
         .then(({ result: { data } }) => createImage2(data, x, y, SECTION_SIZE));
 
   const updateCooldown = () => localFetch(`get-artist-cooldown '${$accountName}`).then(
@@ -50,13 +52,13 @@
     })
   }
 </script>
-{#await dataPromise}
+{#await image}
   <div class="loader"><SyncLoader size={80} /></div>
-{:then [pixelMap, data]}
+{:then data}
   <Sidebar open={showPixel}>
     <ParamPicker on:click={assignPixel} on:close={() => showPixel = false} />
   </Sidebar>
-  <Canvas {pixelMap} {data} {userAssignedPixels} bind:showPixel />
+  <Canvas pixelMap={$pixelMap} {data} {userAssignedPixels} bind:showPixel />
   {#await import('@zerodevx/svelte-toast') then {SvelteToast}}
     <SvelteToast options={{ pausable: true }} />
     <div class="bottom">
