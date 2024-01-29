@@ -1,6 +1,6 @@
  <script lang="ts">
   import Canvas from './Canvas.svelte';
-  import { createImage } from './utility';
+  import { createImage, createImage2 } from './utility';
   import Sidebar from './Sidebar.svelte';
   import ParamPicker from './ParamPicker.svelte';
   import { toast } from '@zerodevx/svelte-toast';
@@ -17,7 +17,7 @@
   let showPixel = false;
   let dialog: HTMLDialogElement;
   let userAssignedPixels = [] as UserPixel[];
-  const dataPromise = localFetch('get-canvas').then(({ result: { data } }) => createImage(data));
+  const dataPromise = localFetch('get-section 0 0 4 4').then(({ result: { data } }) => createImage2(data, 0,0,5));
 
   const updateCooldown = () => localFetch(`get-artist-cooldown '${$accountName}`).then(
     ({ result: { data } }) => cooldownDate.set((Date.now() + data * 1e3) + '')
