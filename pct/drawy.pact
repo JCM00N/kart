@@ -1,3 +1,4 @@
+(namespace "free")
 (define-keyset "free.rog-keyset")
 (module d5 GOV
   
@@ -12,15 +13,16 @@
   (defconst MAX_RGB_VALUE 16777216)
   (defconst POSITIVE_CORRDINATE_ERR "Coordinates must be positive")
   (defconst INVALID_RGB_ERR "Invalid RGB value: ")
+  (use util.guards)
 
   (defun validate-account-id (accountId:string)
     (enforce
       (is-charset CHARSET_LATIN1 accountId)
       (format "Account ID does not conform to the required charset: {}" [accountId])
     )
-    (let ((accountLength (length accountId)))
-      (enforce (> accountLength 2) (format "Account ID '{}' lower than min length" [accountId]))
-      (enforce (< accountLength 257) (format "Account ID exceeds max length: {}" [accountId]))
+    (enforce 
+      (and? (> 257) (< 2) (length accountId))
+      (format "Account ID must be between 3 and 256 characters long: {}" [accountId])
     )
   )
 
@@ -31,11 +33,9 @@
     )
   )
 
-  (defun get-current-time () (at 'block-time (chain-data)))
-
   (defun get-artist-cooldown (artist:string)
-    (with-default-read artist-cooldowns artist { 'end-time: (get-current-time) } { 'end-time := end-time }
-      (diff-time end-time (get-current-time))
+    (with-default-read artist-cooldowns artist { 'end-time: (chain-time) } { 'end-time := end-time }
+      (diff-time end-time (chain-time))
     )
   )
 
@@ -54,14 +54,10 @@
         (format "You need to wait {} more seconds before making a new assigninment" [cooldown])
         [(enforce (<= cooldown 0.0) "") (enforce-guard "free.rog-keyset")]
       )
-      (let (
-          (nRGB (str-to-int 16 rgb))
-          (ERR (format "{}{}" [INVALID_RGB_ERR rgb]))
-        )
-          (enforce (>= nRGB 0) ERR)
-          (enforce (< nRGB MAX_RGB_VALUE) ERR)
-          (insert pixels (format "{}_{}" [x y]) { 'rgb: nRGB })
-          (write artist-cooldowns artist { 'end-time: (add-time (get-current-time) (minutes 1)) })
+      (let ((nRGB (str-to-int 16 rgb)))
+        (enforce (and? (> MAX_RGB_VALUE) (<= 0) nRGB) (format "{}{}" [INVALID_RGB_ERR rgb]))
+        (insert pixels (format "{}_{}" [x y]) { 'rgb: nRGB })
+        (write artist-cooldowns artist { 'end-time: (add-time (chain-time) (minutes 1)) })
       )
     )
   )
