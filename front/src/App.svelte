@@ -13,11 +13,16 @@
   import Dialog from './components/Dialog.svelte';
   import MdHelp from 'svelte-icons/md/MdHelp.svelte'
   import MdMouse from 'svelte-icons/md/MdMouse.svelte'
+  import { AMOUNT_OF_FETCHES, DIMENSIONS, SECTION_SIZE } from './consts';
   
   let showPixel = false;
   let dialog: HTMLDialogElement;
   let userAssignedPixels = [] as UserPixel[];
-  const dataPromise = localFetch('get-section 0 0 4 4').then(({ result: { data } }) => createImage2(data, 0,0,5));
+  let dataPromise: any;
+  for(let x = 0; x < DIMENSIONS; x += SECTION_SIZE)
+    for(let y = 0; y < DIMENSIONS; y += SECTION_SIZE)
+      dataPromise = localFetch(`get-section ${x} ${y} ${x + SECTION_SIZE} ${y + SECTION_SIZE}`)
+        .then(({ result: { data } }) => createImage2(data, x, y, SECTION_SIZE));
 
   const updateCooldown = () => localFetch(`get-artist-cooldown '${$accountName}`).then(
     ({ result: { data } }) => cooldownDate.set((Date.now() + data * 1e3) + '')
