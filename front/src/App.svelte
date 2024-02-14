@@ -20,11 +20,13 @@
   let userAssignedPixels = [] as UserPixel[];
   let dataPromise: any;
   $: image = createImageBitmap(new ImageData($img, DIMENSIONS, DIMENSIONS));
-    
+  let i = 0, z = 0;
+  console.time();
   for(let x = 0; x < DIMENSIONS; x += SECTION_SIZE)
     for(let y = 0; y < DIMENSIONS; y += SECTION_SIZE)
-      dataPromise = localFetch(`get-section ${x} ${y} ${x + SECTION_SIZE - 1} ${y + SECTION_SIZE - 1}`)
-        .then(({ result: { data } }) => createImage2(data, x, y, SECTION_SIZE));
+      dataPromise = localFetch(`get-section ${x} ${y} ${x + SECTION_SIZE - 1} ${y + SECTION_SIZE - 1}`, i++)
+    .catch(() => ++z === 100 && console.timeEnd())
+        .then(({ result: { data } }) => {++z === 100 && console.timeEnd();return createImage2(data, x, y, SECTION_SIZE)});
 
   const updateCooldown = () => localFetch(`get-artist-cooldown '${$accountName}`).then(
     ({ result: { data } }) => cooldownDate.set((Date.now() + data * 1e3) + '')
