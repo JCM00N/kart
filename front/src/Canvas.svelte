@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { pinch } from "svelte-gestures";
   import { DIMENSIONS, MAX_ZOOM, MIN_ZOOM, SCROLL_SENSITIVITY } from "./consts";
   import { add, clamp, forXY, notInBounds, sub, toXY } from "./utility";
   import { 
@@ -67,17 +68,17 @@
     $pickedPixelPosition = {...canvasPixelPos};
     showPixel = true;
   }
-  
-  function handleWheel(e: WheelEvent) {
+
+  function zoomInOut(by: number, from = adjustedMousePos) {
     if (isDragging) return;
-    
-    const zoomChange = e.deltaY * SCROLL_SENSITIVITY;
+
     const prevZoom = zoom;
-    zoom = clamp(MIN_ZOOM, zoom - zoomChange, MAX_ZOOM);
-    
+    zoom = clamp(MIN_ZOOM, zoom - by, MAX_ZOOM);
     if (zoom === prevZoom) return;
-    forXY(xy => offset[xy] += zoomChange * adjustedMousePos[xy])
+    forXY(xy => offset[xy] += by * from[xy]);
   }
+
+  const handleWheel = (e: WheelEvent) => zoomInOut(e.deltaY * SCROLL_SENSITIVITY);
 
   function handleKeyDown(e: KeyboardEvent) {
     const {key} = e;
@@ -128,9 +129,10 @@
 <svelte:window bind:innerWidth={width} bind:innerHeight={height}
   on:keydown={handleKeyDown} on:keyup={e => delete keyPresses[e.key]}
 />
-<canvas bind:this={canvas} {width} {height} style="touch-action: none"
+<canvas bind:this={canvas} {width} {height} style="touch-action: none" use:pinch
   style:cursor={$isEyeDropping ? 'cell' : `grab${isDragging ? 'bing' : ''}`}
   on:pointerdown={handlePointerDown} on:pointerup={() => isDragging = false}
   on:pointermove={handlePointerMove} on:wheel|preventDefault={handleWheel}
-  on:contextmenu|preventDefault={handleOpenMenu}
+  on:contextmenu|preventDefault={handleOpenMenu} on:dblclick={handleOpenMenu} 
+  on:pinch={e => zoomInOut(e.detail.scale, e.detail.center)}
 />

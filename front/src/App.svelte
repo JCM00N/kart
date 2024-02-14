@@ -70,7 +70,7 @@
 <Dialog bind:dialog title="Hi there!">
   <p>Use the cursor with by holding <kbd>Left-click</kbd> to drag the canvas around, and <kbd>Scroll</kbd> to zoom.</p>
   <p>
-    Display the Drawing Drawer by either pressing the <kbd>D</kbd> key
+    Display the Drawing Drawer by either pressing the <kbd>D</kbd> key, <kbd>Double-click</kbd>ing
     or <kbd>Right-click</kbd>ing <span><MdMouse /></span> anywhere on the canvas!
   </p>
   <p>
