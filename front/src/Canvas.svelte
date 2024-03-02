@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { pinch } from "svelte-gestures";
-  import { DIMENSIONS, MAX_ZOOM, MIN_ZOOM, SCROLL_SENSITIVITY } from "./consts";
-  import { add, clamp, forXY, notInBounds, sub, toXY } from "./utility";
+  import { DIMENSIONS, MAX_ZOOM, MIN_ZOOM, SCROLL_SENSITIVITY } from "./util/consts";
+  import { add, clamp, forXY, notInBounds, sub, toXY } from "./util/utility";
   import { 
     isEyeDropping, isPixelTaken,
     pickedHexColor, hoveredPixelColor,
     pickedPixelPosition, springedPixelPosition
-  } from "./store";
+  } from "./util/store";
   import type { UserPixel } from "./types";
-  import { txStatus } from "./pact";
+  import { txStatus } from "./util/pact";
   import { drawTarget } from "./util/draw";
 
   export let data: ImageBitmap;

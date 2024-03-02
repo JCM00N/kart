@@ -1,5 +1,5 @@
 import { DIMENSIONS } from "./consts";
-import type { Pixel, Point } from './types';
+import type { Pixel, Point } from '../types';
 
 export const clamp = (min: number, n: number, max: number) => Math.max(min, Math.min(n, max));
 

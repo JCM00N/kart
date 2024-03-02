@@ -1,12 +1,12 @@
  <script lang="ts">
   import Canvas from './Canvas.svelte';
-  import { createImage } from './utility';
-  import Sidebar from './Sidebar.svelte';
+  import { createImage } from './util/utility';
+  import Sidebar from './components/Sidebar.svelte';
   import ParamPicker from './ParamPicker.svelte';
   import { toast } from '@zerodevx/svelte-toast';
-  import { accountName, cooldownDate, pickedHexColor, pickedPixelPosition } from './store';
-  import { CHAIN_ID, createCmd, localFetch, signAndSend } from './pact';
-  import { SUCCESS_THEME } from './theme';
+  import { accountName, cooldownDate, pickedHexColor, pickedPixelPosition } from './util/store';
+  import { CHAIN_ID, createCmd, localFetch, signAndSend } from './util/pact';
+  import { SUCCESS_THEME } from './util/theme';
   import type { UserPixel } from './types';
   import { SyncLoader } from 'svelte-loading-spinners';
   import FaGithub from 'svelte-icons/fa/FaGithub.svelte';

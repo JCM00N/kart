@@ -1,13 +1,13 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import ColorPicker, {CircleVariant} from "svelte-awesome-color-picker"
-  import Wrapper from "./Wrapper.svelte";
+  import Wrapper from "./components/Wrapper.svelte";
   import IconButton from "./components/IconButton.svelte";
-  import { isEyeDropping, pickedHexColor, hoveredPixelColor, pickedPixelPosition } from "./store";
-  import { DIMENSIONS } from "./consts";
+  import { isEyeDropping, pickedHexColor, hoveredPixelColor, pickedPixelPosition } from "./util/store";
+  import { DIMENSIONS } from "./util/consts";
   import SendButton from "./SendButton.svelte";
-  import MdColorize from 'svelte-icons/md/MdColorize.svelte'
-  import TiArrowBack from 'svelte-icons/ti/TiArrowBack.svelte'  
+  import MdColorize from "svelte-icons/md/MdColorize.svelte";
+  import TiArrowBack from "svelte-icons/ti/TiArrowBack.svelte";
 
   const dispatch = createEventDispatcher();
   const eyeDropper = 'EyeDropper' in window && new window.EyeDropper();

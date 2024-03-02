@@ -1,4 +1,4 @@
-import { CIRCLE } from "../consts";
+import { CIRCLE } from "./consts";
 import type { Point } from "src/types";
 
 const CIRCLES = Object.entries({

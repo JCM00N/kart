@@ -1,9 +1,9 @@
 <script lang="ts">
   import Button from "./components/Button.svelte";
   import { Moon } from 'svelte-loading-spinners'
-  import { txStatus } from "./pact";
+  import { txStatus } from "./util/pact";
   import { onDestroy } from "svelte";
-  import { cooldownDate, isPixelTaken } from "./store";
+  import { cooldownDate, isPixelTaken } from "./util/store";
 
   let count = 0, interval = 0;
   
