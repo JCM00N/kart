@@ -19,7 +19,7 @@
   let userAssignedPixels = [] as UserPixel[];
   const dataPromise = localFetch('get-canvas').then(({ result: { data } }) => createImage(data));
 
-  const updateCooldown = () => localFetch(`get-artist-cooldown '${$accountName}`).then(
+  const updateCooldown = () => localFetch(`get-artist-cooldown "${$accountName}"`).then(
     ({ result: { data } }) => cooldownDate.set((Date.now() + data * 1e3) + '')
   );
 
