@@ -10,11 +10,19 @@ export interface Point {
 
 export type UserPixel = Point & {color: string};
 
+type Request = (msg: {method: string, networkId: string, data?: any}) => Promise<any>;
+
 declare global {
   interface Window {
     EyeDropper: {
       new(): EyeDropper
-    }; 
+    };
+    kadena?: {
+      request: Request
+    };
+    koala?: {
+      request: Request
+    }
   }
 }
 

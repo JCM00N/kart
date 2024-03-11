@@ -10,10 +10,12 @@
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
   "devDependencies": {
+    "@svelte-plugins/tooltips": "^3.0.0",
     "@sveltejs/vite-plugin-svelte": "^1.0.0-next.30",
     "@tsconfig/svelte": "^2.0.1",
     "@zerodevx/svelte-toast": "^0.7.2",
     "node-sass": "^7.0.3",
+    "sass": "^1.71.1",
     "svelte": "^3.44.0",
     "svelte-awesome-color-picker": "^1.2.3",
     "svelte-check": "^2.2.7",

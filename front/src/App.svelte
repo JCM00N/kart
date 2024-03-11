@@ -4,8 +4,8 @@
   import Sidebar from './components/Sidebar.svelte';
   import ParamPicker from './ParamPicker.svelte';
   import { toast } from '@zerodevx/svelte-toast';
-  import { accountName, cooldownDate, pickedHexColor, pickedPixelPosition } from './util/store';
-  import { CHAIN_ID, createCmd, localFetch, signAndSend } from './util/pact';
+  import { accountName, cooldownDate, pickedHexColor, pickedPixelPosition, wallet } from './util/store';
+  import { connect, createCmd, localFetch, signAndSend } from './util/pact';
   import { SUCCESS_THEME } from './util/theme';
   import type { UserPixel } from './types';
   import { SyncLoader } from 'svelte-loading-spinners';
@@ -13,11 +13,12 @@
   import Dialog from './components/Dialog.svelte';
   import MdHelp from 'svelte-icons/md/MdHelp.svelte'
   import MdMouse from 'svelte-icons/md/MdMouse.svelte'
+  import { GAS_FOR_ASSIGNMENT, TX_PRICE, CHAIN_ID } from './util/consts';
   
   let showPixel = false;
   let dialog: HTMLDialogElement;
   let userAssignedPixels = [] as UserPixel[];
-  const dataPromise = localFetch('get-canvas').then(({ result: { data } }) => createImage(data));
+  const dataPromise = localFetch('get-canvas').then(({ result }) => createImage([]));
 
   const updateCooldown = () => localFetch(`get-artist-cooldown "${$accountName}"`).then(
     ({ result: { data } }) => cooldownDate.set((Date.now() + data * 1e3) + '')
@@ -30,7 +31,7 @@
     const color = $pickedHexColor.substring(1);
 
     signAndSend({
-      ...createCmd(`assign-pixel "${color}" ${x} ${y}`),
+      ...createCmd(`assign-pixel "${color}" ${x} ${y}`, GAS_FOR_ASSIGNMENT, $accountName),
       caps: []
     }).then(res => {
       if (!res) return;
@@ -49,7 +50,9 @@
   <div class="loader"><SyncLoader size={80} /></div>
 {:then [pixelMap, data]}
   <Sidebar open={showPixel}>
-    <ParamPicker on:click={assignPixel} on:close={() => showPixel = false} />
+    <ParamPicker on:click={$accountName || $wallet === 'cw' ? assignPixel : connect} on:close={
+      () => showPixel = false
+    } />
   </Sidebar>
   <Canvas {pixelMap} {data} {userAssignedPixels} bind:showPixel />
   {#await import('@zerodevx/svelte-toast') then {SvelteToast}}
@@ -80,7 +83,7 @@
   <p>Once you've selected your position and color, simply click "Send" to Sign your transaction and draw your pixel</p>
   <p>
     Just make sure you have some KDA on chain #{CHAIN_ID} to pay for the gas
-    (0.01 should be more than enough <span class="emoji">☺️</span>)
+    ({TX_PRICE} should be more than enough <span class="emoji">☺️</span>)
   </p>
 </Dialog>
 
