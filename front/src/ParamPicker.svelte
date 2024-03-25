@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { balance } from './util/store.ts';
+	import { balance } from './util/store';
 	import { tooltip } from '@svelte-plugins/tooltips';
   import { createEventDispatcher } from "svelte";
   import ColorPicker, {CircleVariant} from "svelte-awesome-color-picker"
@@ -10,7 +10,7 @@
   import SendButton from "./SendButton.svelte";
   import MdColorize from "svelte-icons/md/MdColorize.svelte";
   import TiArrowBack from "svelte-icons/ti/TiArrowBack.svelte";
-  import { logout } from "./util/pact";
+  import { logout, txStatus } from "./util/pact";
   import Button from "./components/Button.svelte";
 
   const dispatch = createEventDispatcher();
@@ -57,7 +57,7 @@
       </b>
     </p>
     <small style="margin-bottom: 2px; text-align:center;">(balance: {$balance} KDA)</small>
-    <Button on:click={logout}>Logout</Button>
+    <Button on:click={logout} disabled={$txStatus === 'disconnecting'}>Logout</Button>
   {/if}
 </div>
 

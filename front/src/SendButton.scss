@@ -55,3 +55,8 @@ small {
   display: block;
   margin-bottom: 8px
 }
+
+.disabled {
+  pointer-events: none;
+  cursor: default;
+}

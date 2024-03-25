@@ -3,15 +3,17 @@ import { writable } from 'svelte/store';
 import { toast } from '@zerodevx/svelte-toast';
 import { ERROR_THEME, INFO_THEME } from './theme';
 import { accountName, balance, wallet } from "./store";
-import { CHAIN_ID, GAS_PRICE } from "./consts";
+import { CHAIN_ID, GAS_PRICE, NETWORK_ID } from "./consts";
+import wc from "./wc";
+import { abortable } from "./utility";
 
-const networkId = 'mainnet01';
+const networkId = NETWORK_ID;
 const MODULE_NAME = 'free.kart';
 let walletName = '';
 let provider: typeof window.kadena;
 wallet.subscribe(val => {
   walletName = val;
-  provider = val === 'koala' ? window.koala : window.kadena;
+  provider = val === 'koala' ? window.koala : val === 'wc' ? wc : window.kadena;
 });
 
 const GAS_ERROR = `Insufficient funds. Please make sure you have enough KDA to cover the gas fee on chain ${CHAIN_ID}`;
@@ -22,6 +24,8 @@ const KEY_PAIR = {
   publicKey: '1abe9a593910b30345363643aaed47fa8908aedcb6a99096b10bbfca6614480b',
   secretKey: 'e0c7e25b7922a847b9c95d6e199fbcbc979be2dc9e13cfead9d81c4a65b13f81'
 };
+
+const popMessage = (result: {message: string}) => toast.push(result.message, {theme: INFO_THEME});
 
 export const createCmd = (cmd?: string, gasLimit = 1e4, sender = '', module = MODULE_NAME) => ({
   pactCode: `(${module}.${cmd})`,
@@ -36,7 +40,7 @@ export const createCmd = (cmd?: string, gasLimit = 1e4, sender = '', module = MO
   }
 });
 
-type Tx = ReturnType<typeof createCmd> & {caps: string[]};
+export type Tx = ReturnType<typeof createCmd> & {caps: string[]};
 
 export const txStatus = writable('');
 
@@ -81,7 +85,8 @@ async function sendSigned(signedTx: any) {
           toast.push(response.includes('Keyset failure')
             ? 'Keyset failure. Please make sure the keyset matches the signing account' 
             : response.includes('buy gas failed') 
-              ? GAS_ERROR : 'An error occurred. Please try again later'
+              ? GAS_ERROR
+              : response.split(': ')[1] ?? 'An error occurred. Please try again later'
             , {theme: ERROR_THEME, duration: 1e4}
           );
         throw {message: response};
@@ -94,56 +99,68 @@ async function sendSigned(signedTx: any) {
 }
 
 export async function logout() {
-  txStatus.set('');
-  return await provider.request({
+  txStatus.set('disconnecting');
+  return (walletName === 'wc' ? wc.disconnect() : provider.request({
     method: "kda_disconnect",
     networkId,
-  }).finally(() => accountName.set(''));
+  })).finally(() => {
+    txStatus.set('');
+    accountName.set('');
+  });
 }
 
-const sendWithExtention = (tx: Tx) => provider.request({
+const sendRegular = (tx: Tx) => abortable(provider.request({
   method: "kda_requestSign",
   networkId,
   data: {
-      networkId,
-      signingCmd: {...tx.meta, ...tx}
+    networkId,
+    signingCmd: {...tx.meta, ...tx}
   }
-}).then(result => {
-  if (result.signedCmd)
-    return sendSigned(result.signedCmd);
+})).then(result => {
+  const body = result.body ?? result.signedCmd;
+  if (body)
+    return sendSigned(body);
   else toast.push(result.message, {theme: INFO_THEME});
-}).finally(() => txStatus.set(''));
+}).catch(popMessage).finally(() => txStatus.set(''));
 
 export async function connect() {
   if (provider) {
-    const result = await provider.request({method: 'kda_connect', networkId}).catch(walletError);
-    toast.push(result.message, {theme: INFO_THEME});
-    if (result.account)
-      accountName.set(result.account.account);
+    txStatus.set('connecting');
+    try {
+      const result = await abortable(walletName === 'wc'
+        ? wc.connect()
+        : provider.request({ method: 'kda_connect', networkId,  }).catch(walletError)
+      );
+      if (result.account)
+        accountName.set(result.account);
+      else popMessage(result);
+    }
+    catch (e) {popMessage(e);}
+    finally {txStatus.set('');}
   } else walletError();
 };
 
-const sendWithCW = (tx: Tx) => cw.sign(tx).then(res => {
-  if (res) {
-    accountName.set(JSON.parse(res.cmd).meta.sender);
-    return sendSigned(res);
-  }
-  notSigned();
-}).catch((err: Error) => {
-  if (err.message.includes('Failed to fetch') && !isErrorOn) {
-    isErrorOn = true;
-    walletError();
-  } else if (!isErrorOn)
-    console.error(err);
-}).finally(() => txStatus.set(''));
-
+const sendWithCW = async (tx: Tx) => {
+  try {
+    const res = await abortable(cw.sign(tx)) as any;
+    if (res) {
+      accountName.set(JSON.parse(res.cmd).meta.sender);
+      return sendSigned(res);
+    }
+    notSigned();
+  } catch(err) {
+    if (err.message.includes('Failed to fetch') && !isErrorOn) {
+      isErrorOn = true;
+      walletError();
+    } else popMessage(err);
+  } finally {
+    txStatus.set('')
+  };
+}
 export async function signAndSend(tx: Tx) {
   txStatus.set('signing');
-  if (walletName === 'cw')
-    return sendWithCW(tx);
-  else if (walletName === 'kadena' || walletName === 'koala')
-    return sendWithExtention(tx);
+  return (walletName === 'cw' ? sendWithCW : sendRegular)(tx);
 }
 
-accountName.subscribe(val => val && localFetch(`details "${val}"`, 'coin')
-  .then(({result}) => {debugger;balance.set(result.data.balance)}));
+accountName.subscribe(name => name && localFetch(`details "${name}"`, 'coin')
+  .then(({result}) => balance.set(result.data?.balance ?? 0)));

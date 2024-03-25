@@ -6,6 +6,8 @@
   import { accountName, balance, cooldownDate, isPixelTaken, wallet } from "./util/store";
   import { slide } from "svelte/transition";
   import { TX_PRICE, CHAIN_ID } from "./util/consts";
+  import { aborter } from "./util/utility";
+  import wc from "./util/wc";
 
   let count = 0, interval = 0, expanded = false;
   const wallets = {
@@ -37,6 +39,9 @@
     wallet.set(walletName);
     expanded = false;
   }
+  $: isSigning = $txStatus === 'signing';
+  $: isConnecting = $txStatus.startsWith('connecting');
+  $: isConnectingWc = $wallet === 'wc' && isConnecting;
 </script>
 
 <Button on:click disabled={$txStatus || count || $isPixelTaken}
@@ -53,7 +58,7 @@
     <div style="display: flex; justify-content: space-between; width:100%">
       <div style="display: flex; align-items: center; gap: 8px">
         <img src={wallets[$wallet].url} alt={wallets[$wallet].name} />
-        <span>{$wallet === 'cw' ? 'Send' : 'Connect'}</span>
+        <span>{$wallet === 'cw' ? 'Draw!' : 'Connect'}</span>
       </div>
     </div>
     <div class="expander" on:click|stopPropagation={() => expanded = !expanded}>
@@ -74,17 +79,28 @@
   {/if}
 </Button>
 {#if $txStatus}
-  <div style="text-align:center">
-    {#if $txStatus === 'signing'}
-      <small>Waiting for signature...</small>
-      <strong>Open wallet to sign transaction</strong>
+  <div style="text-align: center">
+    {#if isSigning || isConnecting}
+      <small>Waiting for {isSigning ? 'signature' : 'approval'}...</small>
+      <strong>
+        Open wallet to {isSigning ? 'sign transaction' : 'approve connection'}
+        {isConnectingWc ? ', ' : ' or'}
+        <a href="#cancel" on:click|preventDefault={() => {aborter.abort(); txStatus.set('')}}>
+          cancel
+        </a>
+        {#if isConnectingWc}
+          or <a href="#connect" class:disabled={$txStatus.includes('wc')} on:click|preventDefault={
+            () => wc.connect(true)
+          }>connect with a new qr code</a>
+        {/if}
+      </strong>
     {:else}
       <small>Transaction sent. Waiting for response...</small>
     {/if}
   </div>
 {/if}
 {#if $accountName && $balance < TX_PRICE}
-  <small style="color:red; text-align: justify; margin-top: 8px">
+  <small style="color: red; text-align: justify; margin-top: 8px">
     Warning: You do not appear to have enough KDA({'<'}{TX_PRICE}) on chain {CHAIN_ID}.
     Please top up your account.
   </small>

@@ -12,6 +12,8 @@ export type UserPixel = Point & {color: string};
 
 type Request = (msg: {method: string, networkId: string, data?: any}) => Promise<any>;
 
+export type Unpromise<T extends Promise<any>> = T extends Promise<infer U> ? U : never;
+
 declare global {
   interface Window {
     EyeDropper: {

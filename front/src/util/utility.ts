@@ -29,3 +29,10 @@ export async function createImage(data: Pixel[]) {
 
   return [pixelMap, await createImageBitmap(new ImageData(img, DIMENSIONS, DIMENSIONS))];
 }
+
+export let aborter: AbortController;
+export const abortable = <T>(p: Promise<T>) => new Promise((resolve, reject) => {
+  aborter = new AbortController();
+  aborter.signal.addEventListener('abort', () => reject({message: 'Aborted'}), {once: true});
+  p.then(resolve).catch(reject);
+}) as Promise<T>;
