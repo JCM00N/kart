@@ -9,8 +9,9 @@
   }
 </script>
 
+<div class="backdrop" />
 <dialog on:cancel|preventDefault={close} bind:this={dialog} on:click={close}>
-  <div on:click|stopPropagation>
+  <div on:click|stopPropagation class="container">
     <header>
       <h2>{title}</h2>
       <button on:click={close}>✕</button>
@@ -27,9 +28,6 @@
     border-radius: 4px;
     display: block;
     transition: all .5s ease-out;
-    &::backdrop {
-      backdrop-filter: blur(2px);
-    }
     &:not([open]) {
       opacity: 0;
       transform: translateY(40px);
@@ -40,6 +38,14 @@
       transform: translateY(0);
     }
   }
+  .backdrop:has(+ [open]) {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backdrop-filter: blur(2px);
+  }
   header {
     display: flex;
     justify-content: space-between;
@@ -47,7 +53,7 @@
   h2 {
     margin: 12px 0 0 12px;
   }
-  div {
+  .container {
     max-width: 100%;
     width: 30em;
     padding: 0 0 1.25em;
