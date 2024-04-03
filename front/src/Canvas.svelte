@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { pinch } from "svelte-gestures";
+  import dbltap from "./util/dbltap";
   import { DIMENSIONS, MAX_ZOOM, MIN_ZOOM, SCROLL_SENSITIVITY } from "./util/consts";
   import { add, clamp, forXY, notInBounds, sub, toXY } from "./util/utility";
   import { 
@@ -62,10 +63,16 @@
       forXY(xy => offset[xy] = pos[xy] / zoom - dragStart[xy]);
   }
 
-  function handleOpenMenu() {
-    if (notInBounds(canvasPixelPos)) return;
+  function handleOpenMenu(point = canvasPixelPos) {
+    if (point.x !== canvasPixelPos.x && point.y !== canvasPixelPos.y)
+      point = sub({
+        x: Math.round((point.x - offset.x) / zoom),
+        y: Math.round((point.y - offset.y) / zoom)
+      }, origin);
+    
+    if (notInBounds(point)) return;
 
-    $pickedPixelPosition = {...canvasPixelPos};
+    $pickedPixelPosition = {...point};
     showPixel = true;
   }
 
@@ -129,10 +136,11 @@
 <svelte:window bind:innerWidth={width} bind:innerHeight={height}
   on:keydown={handleKeyDown} on:keyup={e => delete keyPresses[e.key]}
 />
-<canvas bind:this={canvas} {width} {height} style="touch-action: none" use:pinch
+<canvas bind:this={canvas} {width} {height} style="touch-action: none"
   style:cursor={$isEyeDropping ? 'cell' : `grab${isDragging ? 'bing' : ''}`}
   on:pointerdown={handlePointerDown} on:pointerup={() => isDragging = false}
   on:pointermove={handlePointerMove} on:wheel|preventDefault={handleWheel}
-  on:contextmenu|preventDefault={handleOpenMenu} on:dblclick={handleOpenMenu} 
-  on:pinch={e => zoomInOut(e.detail.scale, e.detail.center)}
+  on:contextmenu|preventDefault={handleOpenMenu} on:dblclick={handleOpenMenu}
+  use:dbltap on:dbltap={p => handleOpenMenu(p.detail)}
+  use:pinch on:pinch={e => zoomInOut(e.detail.scale, e.detail.center)}
 />

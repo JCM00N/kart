@@ -1,8 +1,15 @@
 <script lang="ts">
+  import IconButton from "./IconButton.svelte";
+  import TiArrowBack from "svelte-icons/ti/TiArrowBack.svelte";
   export let open = false;
 </script>
 
-<aside class:open><slot /></aside>
+<aside class:open>
+  <IconButton style="position: absolute; top: 4px; right: 4px; transform: scale(-1, 1)" on:click>
+    <TiArrowBack />
+  </IconButton>  
+  <slot />
+</aside>
 
 <style>
   aside {
