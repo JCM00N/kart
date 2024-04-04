@@ -11,7 +11,7 @@
   } from "./util/store";
   import type { UserPixel } from "./types";
   import { txStatus } from "./util/pact";
-  import { drawTarget } from "./util/draw";
+  import { drawTarget, preapreCanvas } from "./util/draw";
 
   export let data: ImageBitmap;
   export let showPixel: boolean;
@@ -23,7 +23,7 @@
   const keyPresses = {} as {[key: string]: boolean | undefined};
   
   let canvas: HTMLCanvasElement;
-  let zoom = 1;
+  let zoom = 1, prevBy = 1;
   let isDragging = false;
   let [offset, dragStart, mousePos] = Array.from({ length: 3 }, () => ({ x: 0, y: 0 }));
   
@@ -48,8 +48,7 @@
       $pickedHexColor = '#' + Array.from($hoveredPixelColor.slice(0, 3))
         .map(n => n.toString(16).padStart(2, '0')).join('');
       $isEyeDropping = false;
-    }
-    else {
+    } else {
       isDragging = true;
       const pos = toXY(e);
       forXY(xy => dragStart[xy] = pos[xy] / zoom - offset[xy]);
@@ -76,13 +75,17 @@
     showPixel = true;
   }
 
-  function zoomInOut(by: number, from = adjustedMousePos) {
+  function zoomInOut(by: number, from = adjustedMousePos, isStacked = false) {
     if (isDragging) return;
 
+    const actualChange = isStacked ? prevBy - by : by;
     const prevZoom = zoom;
-    zoom = clamp(MIN_ZOOM, zoom - by, MAX_ZOOM);
+    prevBy = by;
+    if (isStacked && Math.abs(actualChange) > 0.1) return; // Fix issue with use:pinch lib
+    zoom = clamp(MIN_ZOOM, zoom - actualChange, MAX_ZOOM);
+
     if (zoom === prevZoom) return;
-    forXY(xy => offset[xy] += by * from[xy]);
+    forXY(xy => offset[xy] += actualChange * from[xy]);
   }
 
   const handleWheel = (e: WheelEvent) => zoomInOut(e.deltaY * SCROLL_SENSITIVITY);
@@ -102,12 +105,8 @@
   onMount(() => {
     const context = canvas.getContext('2d');
     
-    let anime = requestAnimationFrame(async function update() {
-      context.save();
-      context.imageSmoothingEnabled = false;
-      context.clearRect(0, 0, width, height);
-      context.translate(offset.x, offset.y);
-      context.scale(zoom, zoom);
+    let anime = requestAnimationFrame(function update() {
+      preapreCanvas(context, width, height, offset, zoom);
       context.drawImage(data, origin.x, origin.y);
 
       userAssignedPixels.forEach(({x, y, color}) => {
@@ -115,10 +114,7 @@
         context.fillRect(origin.x + x, origin.y + y, 1, 1);
       });
       
-      if (showPixel) {
-        context.fillStyle = context.strokeStyle = $pickedHexColor;
-        drawTarget(context, pixelScreenPos, $txStatus === 'signing');
-      }
+      if (showPixel) drawTarget(context, pixelScreenPos, $txStatus === 'signing');
       if ($isEyeDropping)
         $hoveredPixelColor = context.getImageData(mousePos.x, mousePos.y, 1, 1).data;
       
@@ -142,5 +138,5 @@
   on:pointermove={handlePointerMove} on:wheel|preventDefault={handleWheel}
   on:contextmenu|preventDefault={handleOpenMenu} on:dblclick={handleOpenMenu}
   use:dbltap on:dbltap={p => handleOpenMenu(p.detail)}
-  use:pinch on:pinch={e => zoomInOut(e.detail.scale, e.detail.center)}
+  use:pinch on:pinch={e => zoomInOut(e.detail.scale, e.detail.center, true)}
 />
