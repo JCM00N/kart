@@ -2,8 +2,9 @@
 
 <style lang="scss">
   .wrapper {
-    margin-top: 16px;
-    
+    margin: 16px 0 auto;
+    display: flex;
+    flex-direction: column;
     /* Remove alpha input */
     :global(input[type="number"]:last-child) {
       display: none;

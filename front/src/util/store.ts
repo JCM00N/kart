@@ -15,6 +15,10 @@ function localStorageWritable(key: string) {
   return item;
 }
 
+const bigWatcher = window.matchMedia('(min-width: 480px)');
+const pointerWatcher = window.matchMedia('(pointer: fine)');
+export const isBig = writable(bigWatcher.matches);
+export const isPointer = writable(pointerWatcher.matches);
 export const balance = writable(0);
 export const pickedHexColor = writable() as Writable<string>;
 export const isEyeDropping = writable(false);
@@ -27,3 +31,6 @@ pickedPixelPosition.subscribe(springedPixelPosition.set);
 
 export const accountName = localStorageWritable('accountName');
 export const cooldownDate = localStorageWritable('cooldownDate');
+
+bigWatcher.addEventListener('change', e => isBig.set(e.matches));
+pointerWatcher.addEventListener('change', e => isPointer.set(e.matches));

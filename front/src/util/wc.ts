@@ -42,23 +42,21 @@ let session = getSession();
 
 const connect = async (isNew = false) => {
   if (isNew || !connection) {
-    txStatus.set('connecting_wc');
-    connection = await client.connect({
-      pairingTopic: isNew ? undefined : client.pairing.getAll({ active: true })[0]?.topic,
-      requiredNamespaces: {
-        kadena: {
-          methods: ['kadena_sign_v1'],
-          chains: ['kadena:mainnet01'],
-          events: []
-        }
+    const pairingTopic = isNew ? undefined : client.pairing.getAll({ active: true })[0]?.topic;
+    txStatus.set(`connecting_wc_${pairingTopic ? 'existing' : 'new'}`);
+    connection = await client.connect({pairingTopic, requiredNamespaces: {
+      kadena: {
+        methods: ['kadena_sign_v1'],
+        chains: ['kadena:mainnet01'],
+        events: []
       }
-    });
+    }});
   }
   
   const { approval, uri } = connection;
   
   if (session) return accountName.set(getName(session));
-  if (uri) modal.openModal({uri});
+  if (uri) modal.openModal({ uri });
   txStatus.set('connecting');
   session = await abortable(approval()).finally(() => modal.closeModal());
   return {account: getName(session)};

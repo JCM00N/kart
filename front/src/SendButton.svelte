@@ -3,19 +3,23 @@
   import { Moon } from 'svelte-loading-spinners'
   import { txStatus } from "./util/pact";
   import { onDestroy } from "svelte";
-  import { accountName, balance, cooldownDate, isPixelTaken, wallet } from "./util/store";
+  import { accountName, balance, cooldownDate, isBig, isPixelTaken, isPointer, wallet } from "./util/store";
   import { slide } from "svelte/transition";
   import { TX_PRICE, CHAIN_ID } from "./util/consts";
   import { aborter } from "./util/utility";
   import wc from "./util/wc";
 
   let count = 0, interval = 0, expanded = false;
+  $: isOnlyWcAvailable = !$isBig && !$isPointer;
   const wallets = {
     wc: {name: 'Wallet Connect', url: '/wc.svg?raw'},
-    kadena: {name: 'Ecko Wallet', url: '/ecko.png'},
-    koala: {name: 'Koala Wallet', url: '/koala.jpg'},
-    cw: {name: 'Chainweaver', url: '/chainweaver.png'},
+    ...!isOnlyWcAvailable && {
+      kadena: {name: 'Ecko Wallet', url: '/ecko.png'},
+      koala: {name: 'Koala Wallet', url: '/koala.jpg'},
+      cw: {name: 'Chainweaver', url: '/chainweaver.png'},
+    }
   };
+  $: isOnlyWcAvailable && wallet.set('wc');
   
   const pad = (num: number) => num.toString().padStart(2, '0');
 
@@ -45,7 +49,7 @@
 </script>
 
 <Button on:click disabled={$txStatus || count || $isPixelTaken}
-  style={`position: relative; margin-top: 16px; ${$accountName ? 'width: 80%' : 'padding: 8px'}`}>
+  style={`position: relative; margin: 16px auto; ${$accountName ? 'width: 80%' : 'padding: 8px'}`}>
   {#if count}
     {m}:{s}
   {:else if $txStatus}
@@ -61,20 +65,22 @@
         <span>{$wallet === 'cw' ? 'Draw!' : 'Connect'}</span>
       </div>
     </div>
-    <div class="expander" on:click|stopPropagation={() => expanded = !expanded}>
-      <span class="caret" class:flip={expanded}>▼</span>
-    </div>
-    {#if expanded}
-      <div class="wallets">
-        <ul transition:slide>
-          {#each Object.entries(wallets) as [key, value]}
-            <li on:click|stopPropagation={() => changeWalletTo(key)}>
-              <i><img src={value.url} alt={value.name} /></i>
-              <span>{value.name} {#if key === 'cw'} Direct Send {/if}</span>
-            </li>  
-          {/each}
-        </ul>
-    </div>
+    {#if !isOnlyWcAvailable}
+      <div class="expander" on:click|stopPropagation={() => expanded = !expanded}>
+        <span class="caret" class:flip={expanded}>▼</span>
+      </div>
+      {#if expanded}
+        <div class="wallets">
+          <ul transition:slide>
+            {#each Object.entries(wallets) as [key, value]}
+              <li on:click|stopPropagation={() => changeWalletTo(key)}>
+                <i><img src={value.url} alt={value.name} /></i>
+                <span>{value.name} {#if key === 'cw'} Direct Send {/if}</span>
+              </li>  
+            {/each}
+          </ul>
+      </div>
+      {/if}
     {/if}
   {/if}
 </Button>
