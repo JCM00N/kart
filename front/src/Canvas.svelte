@@ -114,7 +114,10 @@
         context.fillRect(origin.x + x, origin.y + y, 1, 1);
       });
       
-      if (showPixel) drawTarget(context, pixelScreenPos, $txStatus === 'signing');
+      if (showPixel) {
+        context.fillStyle = context.strokeStyle = $pickedHexColor;
+        drawTarget(context, pixelScreenPos, $txStatus === 'signing');
+      }
       if ($isEyeDropping)
         $hoveredPixelColor = context.getImageData(mousePos.x, mousePos.y, 1, 1).data;
       

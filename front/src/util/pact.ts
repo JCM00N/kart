@@ -4,8 +4,10 @@ import { toast } from '@zerodevx/svelte-toast';
 import { ERROR_THEME, INFO_THEME } from './theme';
 import { accountName, balance, wallet } from "./store";
 import { CHAIN_ID, GAS_PRICE, NETWORK_ID } from "./consts";
-import wc from "./wc";
 import { abortable } from "./utility";
+
+let wc: typeof import('./wc').default;
+import('./wc').then(res => wc = res.default);
 
 const networkId = NETWORK_ID;
 const MODULE_NAME = 'free.kart';
@@ -123,12 +125,12 @@ const sendRegular = (tx: Tx) => abortable(provider.request({
   else toast.push(result.message, {theme: INFO_THEME});
 }).catch(popMessage).finally(() => txStatus.set(''));
 
-export async function connect() {
+export async function connect(isNew = false) {
   if (provider) {
     txStatus.set('connecting');
     try {
       const result = await abortable(walletName === 'wc'
-        ? wc.connect()
+        ? wc.connect(isNew)
         : provider.request({ method: 'kda_connect', networkId,  }).catch(walletError)
       );
       if (result.account)

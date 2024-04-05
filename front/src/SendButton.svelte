@@ -1,13 +1,12 @@
 <script lang="ts">
   import Button from "./components/Button.svelte";
   import { Moon } from 'svelte-loading-spinners'
-  import { txStatus } from "./util/pact";
+  import { txStatus, connect } from "./util/pact";
   import { onDestroy } from "svelte";
   import { accountName, balance, cooldownDate, isBig, isPixelTaken, isPointer, wallet } from "./util/store";
   import { slide } from "svelte/transition";
   import { TX_PRICE, CHAIN_ID } from "./util/consts";
   import { aborter } from "./util/utility";
-  import wc from "./util/wc";
 
   let count = 0, interval = 0, expanded = false;
   $: isOnlyWcAvailable = !$isBig && !$isPointer;
@@ -96,7 +95,7 @@
         </a>
         {#if isConnectingWc}
           or <a href="#connect" class:disabled={$txStatus.includes('wc')} on:click|preventDefault={
-            () => wc.connect(true)
+            () => connect(true)
           }>connect with a new qr code</a>
         {/if}
       </strong>

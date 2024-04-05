@@ -44,9 +44,9 @@ export function drawTarget(context: CanvasRenderingContext2D, position: Point, i
 export function preapreCanvas(
   context: CanvasRenderingContext2D, width: number, height: number, offset: Point, zoom: number
 ) {
+  context.save();
+  context.imageSmoothingEnabled = false;
   context.clearRect(0, 0, width, height);
-  context.fillStyle = context.strokeStyle = get(pickedHexColor);
-  context.lineWidth = 1;
   context.translate(offset.x, offset.y);
   context.scale(zoom, zoom);
 }

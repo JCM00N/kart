@@ -16,7 +16,6 @@ export default defineConfig(({command}) => {
         }
       }),
     ],
-    
     server: {
       watch: {
         ignored: ['!**/node_modules/chainweb/**']
