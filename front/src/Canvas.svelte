@@ -56,6 +56,13 @@
     } else isDragging = false;
   }
 
+  function handlePointerUp() {
+    if (!isDragging) return;
+
+    isDragging = false;
+    --pointerCount;
+  }
+
   function handlePointerMove(e: MouseEvent) {
     const pos = toXY(e);
     forXY(xy => mousePos[xy] = pos[xy]);
@@ -105,7 +112,8 @@
 
   onMount(() => {
     const context = canvas.getContext('2d');
-    
+    canvas.onpointerleave = canvas.onpointerup = handlePointerUp;
+
     let anime = requestAnimationFrame(function update() {
       preapreCanvas(context, width, height, offset, zoom);
       context.drawImage(data, origin.x, origin.y);
@@ -115,7 +123,7 @@
         context.fillStyle = color;
         context.fillRect(origin.x + x, origin.y + y, 1, 1);
       });
-      
+
       if (showPixel) {
         context.fillStyle = context.strokeStyle = $pickedHexColor;
         drawTarget(context, pixelScreenPos, $txStatus === 'signing');
@@ -139,9 +147,8 @@
 />
 <canvas bind:this={canvas} {width} {height} style="touch-action: none"
   style:cursor={$isEyeDropping ? 'cell' : `grab${isDragging ? 'bing' : ''}`}
-  on:pointerdown={handlePointerDown} on:pointerup={() => { isDragging = false; --pointerCount; }}
-  on:pointermove={handlePointerMove} on:wheel|preventDefault={handleWheel}
-  on:contextmenu|preventDefault={handleOpenMenu} on:dblclick={handleOpenMenu}
-  use:dbltap on:dbltap={p => handleOpenMenu(p.detail)}
+  on:pointerdown={handlePointerDown} on:pointermove={handlePointerMove}
+  on:wheel|preventDefault={handleWheel} on:contextmenu|preventDefault={handleOpenMenu}
+  on:dblclick={handleOpenMenu} use:dbltap on:dbltap={p => handleOpenMenu(p.detail)}
   use:pinch on:pinch={e => zoomInOut(e.detail.scale, e.detail.center, true)}
 />
