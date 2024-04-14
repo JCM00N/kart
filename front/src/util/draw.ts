@@ -1,4 +1,4 @@
-import { CIRCLE } from "./consts";
+import { CIRCLE, DIMENSIONS } from "./consts";
 import type { Point } from "src/types";
 import { pickedHexColor } from "./store";
 import { get } from "svelte/store";
@@ -49,4 +49,10 @@ export function preapreCanvas(
   context.clearRect(0, 0, width, height);
   context.translate(offset.x, offset.y);
   context.scale(zoom, zoom);
+}
+
+export function drawBorder(context: CanvasRenderingContext2D, origin: Point) {
+  context.lineWidth = 1;
+  context.strokeStyle = 'white';
+  context.strokeRect(origin.x, origin.y, DIMENSIONS, DIMENSIONS);
 }

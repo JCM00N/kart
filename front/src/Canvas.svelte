@@ -11,7 +11,7 @@
   } from "./util/store";
   import type { UserPixel } from "./types";
   import { txStatus } from "./util/pact";
-  import { drawTarget, preapreCanvas } from "./util/draw";
+  import { drawBorder, drawTarget, preapreCanvas } from "./util/draw";
 
   export let data: ImageBitmap;
   export let showPixel: boolean;
@@ -109,6 +109,7 @@
     let anime = requestAnimationFrame(function update() {
       preapreCanvas(context, width, height, offset, zoom);
       context.drawImage(data, origin.x, origin.y);
+      drawBorder(context, origin);
 
       userAssignedPixels.forEach(({x, y, color}) => {
         context.fillStyle = color;
