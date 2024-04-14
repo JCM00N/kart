@@ -20,6 +20,7 @@
   
   let width = window.innerWidth;
 	let height = window.innerHeight;
+  let pointerCount = 0;
   const keyPresses = {} as {[key: string]: boolean | undefined};
   
   let canvas: HTMLCanvasElement;
@@ -41,18 +42,18 @@
     $isPixelTaken = pixelMap[`${pos.x}_${pos.y}`] !== undefined
   );
   
-  function handlePointerDown(e: MouseEvent) {
+  function handlePointerDown(e: PointerEvent) {
     if (e.button === 2) return; // Right click
 
     if ($isEyeDropping) {
       $pickedHexColor = '#' + Array.from($hoveredPixelColor.slice(0, 3))
         .map(n => n.toString(16).padStart(2, '0')).join('');
       $isEyeDropping = false;
-    } else {
+    } else if (++pointerCount === 1) {
       isDragging = true;
       const pos = toXY(e);
       forXY(xy => dragStart[xy] = pos[xy] / zoom - offset[xy]);
-    }
+    } else isDragging = false;
   }
 
   function handlePointerMove(e: MouseEvent) {
@@ -137,7 +138,7 @@
 />
 <canvas bind:this={canvas} {width} {height} style="touch-action: none"
   style:cursor={$isEyeDropping ? 'cell' : `grab${isDragging ? 'bing' : ''}`}
-  on:pointerdown={handlePointerDown} on:pointerup={() => isDragging = false}
+  on:pointerdown={handlePointerDown} on:pointerup={() => { isDragging = false; --pointerCount; }}
   on:pointermove={handlePointerMove} on:wheel|preventDefault={handleWheel}
   on:contextmenu|preventDefault={handleOpenMenu} on:dblclick={handleOpenMenu}
   use:dbltap on:dbltap={p => handleOpenMenu(p.detail)}
