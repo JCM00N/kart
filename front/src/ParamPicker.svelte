@@ -50,12 +50,15 @@
     <p style="margin-bottom: 4px; text-align:center">
       Signed in as
       <b use:tooltip={{animation: 'slide', delay: 0}} title={$accountName}>
-        {$accountName.slice(0, 5)}...{$accountName.slice(-5)}
+        {$accountName.length >= 10
+          ? `${$accountName.slice(0, 5)}...${$accountName.slice(-5)}`
+          : $accountName
+        }
       </b>
     </p>
     <small style="margin-bottom: 2px; text-align:center;">(balance: {$balance} KDA)</small>
     <Button on:click={logout} disabled={$txStatus === 'disconnecting'}>
-      Logout <span style="width: 32px; margin-left: 4px"><IoMdLogOut /></span>
+      Logout <span style="width: 32px; margin-left: 8px"><IoMdLogOut /></span>
     </Button>
   {/if}
 </div>
