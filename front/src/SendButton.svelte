@@ -100,7 +100,12 @@
         {/if}
       </strong>
     {:else}
-      <small>Transaction sent. Waiting for response...</small>
+      <small>
+        {$txStatus === 'disconnecting'
+          ? 'Disconnecting...'
+          : 'Transaction sent. Waiting for response...'
+        }
+      </small>
     {/if}
   </div>
 {/if}
