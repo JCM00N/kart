@@ -1,11 +1,12 @@
  <script lang="ts">
+	import { ModalCtrl } from '@walletconnect/modal-core';
   import Canvas from './Canvas.svelte';
   import { createImage } from './util/utility';
   import Sidebar from './components/Sidebar.svelte';
   import ParamPicker from './ParamPicker.svelte';
   import { toast } from '@zerodevx/svelte-toast';
   import { accountName, cooldownDate, isBig, pickedHexColor, pickedPixelPosition, wallet } from './util/store';
-  import { connect, createCmd, localFetch, signAndSend, txStatus } from './util/pact';
+  import { connect, createCmd, localFetch, signAndSend } from './util/pact';
   import { SUCCESS_THEME } from './util/theme';
   import type { UserPixel } from './types';
   import { SyncLoader } from 'svelte-loading-spinners';
@@ -21,7 +22,7 @@
   let paramPickerDialog: HTMLDialogElement;
   let userAssignedPixels = [] as UserPixel[];
   const dataPromise = localFetch('get-canvas').then(({ result }) => createImage([]));
-  txStatus.subscribe(status => status.includes('new') && paramPickerDialog.close());
+  ModalCtrl.subscribe(modal => modal.open && paramPickerDialog?.close?.());
 
   const updateCooldown = () => localFetch(`get-artist-cooldown "${$accountName}"`).then(
     ({ result: { data } }) => cooldownDate.set((Date.now() + data * 1e3) + '')
