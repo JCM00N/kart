@@ -1,31 +1,25 @@
 import { fetch as pact, wallet as cw } from "pact-lang-api";
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { toast } from '@zerodevx/svelte-toast';
 import { ERROR_THEME, INFO_THEME } from './theme';
-import { accountName, balance, wallet } from "./store";
-import { CHAIN_ID, GAS_PRICE, NETWORK_ID } from "./consts";
+import { accountName, balance, cooldownDate, wallet } from "./store";
+import {
+  CHAIN_ID, ENDPOINT, GAS_ERROR, GAS_PRICE, KEY_PAIR, MODULE_NAME, NETWORK_ID, NOT_SIGNED, TTL, WALLET_ERR
+} from "./consts";
 import { abortable } from "./utility";
 
 let wc: typeof import('./wc').default;
-import('./wc').then(res => wc = res.default);
-
-const networkId = NETWORK_ID;
-const MODULE_NAME = 'free.kart';
-let walletName = '';
-let provider: typeof window.kadena;
-wallet.subscribe(val => {
-  walletName = val;
-  provider = val === 'koala' ? window.koala : val === 'wc' ? wc : window.kadena;
+import('./wc').then(res => {
+  wc = res.default;
+  if (!provider) provider = wc;
 });
 
-const GAS_ERROR = `Insufficient funds. Please make sure you have enough KDA to cover the gas fee on chain ${CHAIN_ID}`;
-const TTL = 600;
-const ENDPOINT = `https://api.chainweb.com/chainweb/0.0/${networkId}/chain/${CHAIN_ID}/pact`;
+const networkId = NETWORK_ID;
 
-const KEY_PAIR = {
-  publicKey: '1abe9a593910b30345363643aaed47fa8908aedcb6a99096b10bbfca6614480b',
-  secretKey: 'e0c7e25b7922a847b9c95d6e199fbcbc979be2dc9e13cfead9d81c4a65b13f81'
-};
+let provider: typeof window.kadena;
+wallet.subscribe(val =>
+  provider = val === 'koala' ? window.koala : val === 'wc' ? wc : window.kadena
+);
 
 const popMessage = (result: {message: string}) => toast.push(result.message, {theme: INFO_THEME});
 
@@ -43,17 +37,10 @@ export const createCmd = (cmd?: string, gasLimit = 1e4, sender = '', module = MO
 });
 
 export type Tx = ReturnType<typeof createCmd> & {caps: string[]};
-
 export const txStatus = writable('');
+export const localFetch = (cmd: string, module = MODULE_NAME) => 
+  pact.local(createCmd(cmd, 1e8, '', module), ENDPOINT);
 
-export const localFetch = (cmd: string, module = MODULE_NAME) => pact.local(createCmd(cmd, 1e8, '', module), ENDPOINT);
-
-const WALLET_ERR = `
-<strong class="strong-text"><span class="emoji">⚠️</span> No wallet detected!</strong><br>
-Please make sure your wallet is opened and active
-`;
-const NOT_SIGNED = `
-<strong class="strong-text"><span class="emoji">ℹ️</span> Transaction not signed</strong><br>`;
 let isErrorOn = false;
 
 const notSigned = () => toast.push(NOT_SIGNED, {
@@ -102,15 +89,16 @@ async function sendSigned(signedTx: any) {
 
 export async function logout() {
   txStatus.set('disconnecting');
-  return (walletName === 'wc' ? wc.disconnect() : provider.request({
+  return (get(wallet) === 'wc' ? wc.disconnect() : provider.request({
     method: "kda_disconnect",
     networkId,
   })).finally(() => {
-    txStatus.set('');
-    accountName.set('');
+    [txStatus, accountName].forEach(store => store.set(''));
+    cooldownDate.set('0');
   });
 }
 
+// pact-lang-api doesn't parse result correctly despite my PRs, so I have to do it manually
 const sendRegular = (tx: Tx) => abortable(provider.request({
   method: "kda_requestSign",
   networkId,
@@ -125,16 +113,16 @@ const sendRegular = (tx: Tx) => abortable(provider.request({
   else toast.push(result.message, {theme: INFO_THEME});
 }).catch(popMessage).finally(() => txStatus.set(''));
 
-export async function connect(isNew = false) {
+export async function connect(isNew: boolean | MouseEvent = false) {
   if (provider) {
     txStatus.set('connecting');
     try {
-      const result = await abortable(walletName === 'wc'
-        ? wc.connect(isNew)
-        : provider.request({ method: 'kda_connect', networkId,  }).catch(walletError)
+      const result = await abortable(get(wallet) === 'wc'
+        ? wc.connect(isNew === true)
+        : provider.request({ method: 'kda_connect', networkId }).catch(walletError)
       );
       if (result.account)
-        accountName.set(result.account);
+        accountName.set(result.account?.account ?? result.account);
       else popMessage(result);
     }
     catch (e) {popMessage(e);}
@@ -159,9 +147,10 @@ const sendWithCW = async (tx: Tx) => {
     txStatus.set('')
   };
 }
+
 export async function signAndSend(tx: Tx) {
   txStatus.set('signing');
-  return (walletName === 'cw' ? sendWithCW : sendRegular)(tx);
+  return (get(wallet) === 'cw' ? sendWithCW : sendRegular)(tx);
 }
 
 accountName.subscribe(name => name && localFetch(`details "${name}"`, 'coin')

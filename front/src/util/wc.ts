@@ -1,5 +1,6 @@
 import { SignClient } from '@walletconnect/sign-client';
 import { WalletConnectModal } from '@walletconnect/modal';
+import { RouterCtrl } from '@walletconnect/modal-core'
 import { getSdkError } from '@walletconnect/utils';
 import type { SessionTypes } from '@walletconnect/types';
 import type { Unpromise } from '../types';
@@ -21,27 +22,24 @@ const clientPromise = SignClient.init({...init, metadata: {
 }});
 
 let connection: Unpromise<ReturnType<(Unpromise<typeof clientPromise>)['connect']>>;
-const modal = new WalletConnectModal({...init, enableExplorer: false});
+let session: SessionTypes.Struct | undefined;
+const modal = new WalletConnectModal(init);
 
-const getName = async (sessionPromise: Promise<SessionTypes.Struct> | SessionTypes.Struct) => {
-  const session = sessionPromise instanceof Promise ? await sessionPromise : sessionPromise;
+const getName = (session: SessionTypes.Struct) => {
   const name = session?.namespaces?.kadena?.accounts?.[0]?.split?.(':')?.at?.(-1);
   return name ? `k:${name}` : '';
 }
 
-const getSession = async () => {
+const invalidateSession = async () => {
   const client = await clientPromise;
   const {keys} = client.session;
-  const session = client.session.length && client.session.get(keys[keys.length - 1]);
+  session = client.session.length && client.session.get(keys[keys.length - 1]);
   if (session) {
     wallet.set('wc');
-    accountName.set(await getName(session));
+    accountName.set(getName(session));
   };
-
-  return session;
-}
-
-let session = getSession();
+};
+invalidateSession();
 
 const connect = async (isNew = false) => {
   const client = await clientPromise;
@@ -59,15 +57,24 @@ const connect = async (isNew = false) => {
   
   const { approval, uri } = connection;
   
-  if (session) return accountName.set(await getName(session));
-  if (uri) modal.openModal({ uri });
+  if (session) return accountName.set(getName(session));
+  if (uri) {
+    modal.openModal({ uri });
+    RouterCtrl.reset('Qrcode');
+  }
   txStatus.set('connecting');
-  session = abortable(approval()).finally(() => modal.closeModal());
-  return {account: await getName(session)};
+  try {session = await abortable(approval()).finally(() => modal.closeModal());}
+  catch (e) {
+    invalidateSession();
+    connection = undefined;
+    throw e;
+  }
+
+  return {account: getName(session)};
 };
 
 const disconnect = async () => (await clientPromise).disconnect({
-  topic: (await session).topic, reason: getSdkError('USER_DISCONNECTED')
+  topic: session.topic, reason: getSdkError('USER_DISCONNECTED')
 }).finally(() => {
   accountName.set('');
   session = undefined;
@@ -75,7 +82,7 @@ const disconnect = async () => (await clientPromise).disconnect({
 
 const request = async tx => (await clientPromise).request({
   chainId: `kadena:${NETWORK_ID}`,
-  topic: (await session).topic,
+  topic: session.topic,
   request: {
     method: 'kadena_sign_v1',
     params: tx.data.signingCmd,
