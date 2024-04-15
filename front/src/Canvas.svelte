@@ -25,7 +25,8 @@
   
   let canvas: HTMLCanvasElement;
   let zoom = 1, prevBy = 1;
-  let isDragging = false;
+  let isDragging: boolean | 0 = false;
+  let unsub: () => void;
   let [offset, dragStart, mousePos] = Array.from({ length: 3 }, () => ({ x: 0, y: 0 }));
   
   $: origin = {
@@ -38,8 +39,8 @@
   };
   $: pixelScreenPos = add($springedPixelPosition, origin);
   $: canvasPixelPos = sub(adjustedMousePos, origin);
-  const unsub = pickedPixelPosition.subscribe(pos =>
-    $isPixelTaken = pixelMap[`${pos.x}_${pos.y}`] !== undefined
+  $: isPixelTaken.set(
+    pixelMap[`${$pickedPixelPosition.x}_${$pickedPixelPosition.y}`] !== undefined
   );
   
   function handlePointerDown(e: PointerEvent) {
@@ -54,13 +55,6 @@
       const pos = toXY(e);
       forXY(xy => dragStart[xy] = pos[xy] / zoom - offset[xy]);
     } else isDragging = false;
-  }
-
-  function handlePointerUp() {
-    if (!isDragging) return;
-
-    isDragging = false;
-    --pointerCount;
   }
 
   function handlePointerMove(e: MouseEvent) {
@@ -109,10 +103,10 @@
       keyPresses.ArrowDown &&  $pickedPixelPosition.y + 1 < DIMENSIONS && ++$pickedPixelPosition.y;
     }
   }
-
-  onMount(() => {
+  
+  function init() {
     const context = canvas.getContext('2d');
-    canvas.onpointerleave = canvas.onpointerup = handlePointerUp;
+    canvas.onpointerleave = canvas.onpointerup = () => isDragging = pointerCount = 0;
 
     let anime = requestAnimationFrame(function update() {
       preapreCanvas(context, width, height, offset, zoom);
@@ -123,7 +117,7 @@
         context.fillStyle = color;
         context.fillRect(origin.x + x, origin.y + y, 1, 1);
       });
-
+      
       if (showPixel) {
         context.fillStyle = context.strokeStyle = $pickedHexColor;
         drawTarget(context, pixelScreenPos, $txStatus === 'signing');
@@ -134,16 +128,16 @@
       context.restore();
       anime = requestAnimationFrame(update);
     });
-  
-    return () => {
-      cancelAnimationFrame(anime);
-      unsub();
-    }
-  });
+    return () => cancelAnimationFrame(anime);
+  }
+
+  const callInit = () => unsub = init();
+  onMount(callInit);
 </script>
 
 <svelte:window bind:innerWidth={width} bind:innerHeight={height}
   on:keydown={handleKeyDown} on:keyup={e => delete keyPresses[e.key]}
+  on:visibilitychange={() => (document.hidden ? unsub : callInit)()}
 />
 <canvas bind:this={canvas} {width} {height} style="touch-action: none"
   style:cursor={$isEyeDropping ? 'cell' : `grab${isDragging ? 'bing' : ''}`}
