@@ -26,3 +26,5 @@ export const KEY_PAIR = {
 };
 
 export const MODULE_NAME = 'free.kart';
+export const SECTION_SIZE = 100;
+export const AMOUNT_OF_FETCHES = DIMENSIONS * DIMENSIONS / SECTION_SIZE;
