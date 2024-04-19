@@ -9,7 +9,6 @@
   import { connect, createCmd, localFetch, signAndSend } from './util/pact';
   import { SUCCESS_THEME } from './util/theme';
   import type { UserPixel } from './types';
-  import { SyncLoader } from 'svelte-loading-spinners';
   import FaGithub from 'svelte-icons/fa/FaGithub.svelte';
   import Dialog from './components/Dialog.svelte';
   import MdHelp from 'svelte-icons/md/MdHelp.svelte'
@@ -21,13 +20,13 @@
   let dialog: HTMLDialogElement;
   let paramPickerDialog: HTMLDialogElement;
   let userAssignedPixels = [] as UserPixel[];
-  let dataPromise: any;
+  let data: ImageBitmap;
   ModalCtrl.subscribe(modal => modal.open && paramPickerDialog?.close?.());
-  
-  $: image = createImageBitmap(new ImageData($img, DIMENSIONS, DIMENSIONS));
+
+  $: createImageBitmap(new ImageData($img, DIMENSIONS, DIMENSIONS)).then(_data => data = _data);
   for(let x = 0, i = 0; x < DIMENSIONS; x += SECTION_SIZE)
     for(let y = 0; y < DIMENSIONS; y += SECTION_SIZE)
-      dataPromise = localFetch(
+      localFetch(
         `get-section ${x} ${y} ${x + SECTION_SIZE - 1} ${y + SECTION_SIZE - 1}`, undefined, i++
       ).then(({ result: { data } }) => createImage(data, x, y, SECTION_SIZE));
 
@@ -57,27 +56,23 @@
     })
   }
 </script>
-{#await image}
-  <div style="margin: auto"><SyncLoader size={80} /></div>
-{:then data}
-  {#if $isBig}
-    <Sidebar open={showPixel} on:click={() => showPixel = false}>
-      <ParamPicker on:click={$accountName || $wallet === 'cw' ? assignPixel : connect} />
-    </Sidebar>
-  {:else}
-    <Dialog bind:dialog={paramPickerDialog}>
-      <ParamPicker on:click={$accountName ? assignPixel : connect} />
-    </Dialog>
-  {/if}
-  <Canvas pixelMap={$pixelMap} {data} {userAssignedPixels} bind:showPixel />
-  {#await import('@zerodevx/svelte-toast') then {SvelteToast}}
-    <SvelteToast options={{ pausable: true }} />
-    <div class="bottom">
-      <SvelteToast target="bottom" options={{
-        pausable: true, reversed: true, duration: 6e3, intro: { y: 80 }
-      }}  />
-    </div>
-  {/await}
+{#if $isBig}
+  <Sidebar open={showPixel} on:click={() => showPixel = false}>
+    <ParamPicker on:click={$accountName || $wallet === 'cw' ? assignPixel : connect} />
+  </Sidebar>
+{:else}
+  <Dialog bind:dialog={paramPickerDialog}>
+    <ParamPicker on:click={$accountName ? assignPixel : connect} />
+  </Dialog>
+{/if}
+<Canvas pixelMap={$pixelMap} {data} {userAssignedPixels} bind:showPixel />
+{#await import('@zerodevx/svelte-toast') then {SvelteToast}}
+  <SvelteToast options={{ pausable: true }} />
+  <div class="bottom">
+    <SvelteToast target="bottom" options={{
+      pausable: true, reversed: true, duration: 6e3, intro: { y: 80 }
+    }}  />
+  </div>
 {/await}
 <a class="icon github" href="https://github.com/JCM00N/kart">
   <FaGithub />

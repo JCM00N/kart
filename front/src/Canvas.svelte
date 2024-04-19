@@ -39,9 +39,8 @@
   };
   $: pixelScreenPos = add($springedPixelPosition, origin);
   $: canvasPixelPos = sub(adjustedMousePos, origin);
-  $: isPixelTaken.set(
-    pixelMap[`${$pickedPixelPosition.x}_${$pickedPixelPosition.y}`] !== undefined
-  );
+  $: pixelVal = pixelMap[`${$pickedPixelPosition.x}_${$pickedPixelPosition.y}`]
+  $: isPixelTaken.set(pixelVal ? 'yes' : pixelVal === undefined ? 'maybe' : '');
   
   function handlePointerDown(e: PointerEvent) {
     if (e.button === 2) return; // Right click

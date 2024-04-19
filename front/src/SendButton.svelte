@@ -51,7 +51,7 @@
   style={`position: relative; margin: 16px auto; ${$accountName ? 'width: 80%' : 'padding: 8px'}`}>
   {#if count}
     {m}:{s}
-  {:else if $txStatus}
+  {:else if $txStatus || $isPixelTaken === 'maybe'}
     <Moon size="36" color="black" />
   {:else if $isPixelTaken}
     Occupied Spot

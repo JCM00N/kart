@@ -30,8 +30,7 @@ export function createImage(data: {int: number}[], fromX: number, fromY: number,
         imageData[index + n] = pixel % 256;
       imageData[index + 3] = 255;
 
-      if (PIXEL)
-        pxlMap[`${x}_${y}`] = PIXEL;
+      pxlMap[`${x}_${y}`] = PIXEL;
     }
 
     pixelMap.set(pxlMap);
