@@ -6,7 +6,7 @@ import { accountName, balance, cooldownDate, wallet } from "./store";
 import {
   CHAIN_ID, ENDPOINT, GAS_ERROR, GAS_PRICE, KEY_PAIR, MODULE_NAME, NETWORK_ID, NOT_SIGNED, TTL, WALLET_ERR
 } from "./consts";
-import { abortable } from "./utility";
+import { abortable, aborter } from "./utility";
 
 let wc: typeof import('./wc').default;
 import('./wc').then(res => {
@@ -48,15 +48,21 @@ const endpoints = [
 
 //From my tests, `api.chainweb.com` is more than 2 to 3 times faster than `chainweb.ecko.finance` and `node.kda-2.zelcore.io`, while both of them are twice as fast as `node.kda-3.zelcore.io` .
 // Meanwhile `node.kda.zelcore.io` is somewhere between `node.kda-2.zelcore.io` and `node.kda-3.zelcore.io`
-export const localFetch = (cmd: string, module = MODULE_NAME, fetchNumber = 50) => pact.local(
-  createCmd(cmd, 1e8, '', module),
-  endpoints[
+export const localFetch = (cmd: string, module = MODULE_NAME, fetchNumber = 50) => {
+  const command = createCmd(cmd, 1e8, '', module);
+  const aborter = new AbortController();
+  setTimeout(() => aborter.abort(), 6e3);
+
+  return abortable(pact.local(
+    command, endpoints[
     fetchNumber < 7 ? 4 : ( // 'node.kda-3.zelcore.io
       fetchNumber < 14 ? 2 : ( // node.kda.zelcore.io
         fetchNumber < 28 ? 3 : ( // node.kda-2.zelcore.io
           fetchNumber < 48 ? 1 : // chainweb.ecko.finance
-  0)))] // api.chainweb.com
-) as Promise<{result: {data: any}}>;
+      0))) // api.chainweb.com
+    ]
+  ), aborter).catch(() => pact.local(command, endpoints[0])) as Promise<{result: {data: any}}>;
+};
 
 let isErrorOn = false;
 

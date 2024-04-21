@@ -38,8 +38,8 @@ export function createImage(data: {int: number}[], fromX: number, fromY: number,
 }
 
 export let aborter: AbortController;
-export const abortable = <T>(p: Promise<T>) => new Promise((resolve, reject) => {
-  aborter = new AbortController();
-  aborter.signal.addEventListener('abort', () => reject({message: 'Aborted'}), {once: true});
-  p.then(resolve).catch(reject);
-}) as Promise<T>;
+export const abortable = <T>(p: Promise<T>, aborter = new AbortController()) => new Promise(
+  (resolve, reject) => {
+    aborter.signal.addEventListener('abort', () => reject({message: 'Aborted'}), {once: true});
+    p.then(resolve).catch(reject);
+  }) as Promise<T>;
