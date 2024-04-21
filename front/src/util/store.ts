@@ -30,7 +30,7 @@ pickedPixelPosition.subscribe(springedPixelPosition.set);
 
 export const wallet = localStorageWritable('wallet', window.kadena ? 'kadena' : (window.koala ? 'koala' : 'wc'));
 export const accountName = localStorageWritable('accountName');
-export const cooldownDate = localStorageWritable('cooldownDate');
+export const cooldownDate = localStorageWritable('cooldownDate', '0');
 
 bigWatcher.addEventListener('change', e => isBig.set(e.matches));
 pointerWatcher.addEventListener('change', e => isPointer.set(e.matches));
