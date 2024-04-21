@@ -97,7 +97,8 @@ async function sendSigned(signedTx: any) {
           );
         throw {message: response};
       }
-      else return pact.listen({ listen: response.requestKeys[0] }, ENDPOINT);
+      else return pact.listen({ listen: response.requestKeys[0] }, ENDPOINT)
+        .finally(() => txStatus.set(''));
     })
     .catch((err: Error) => {
       console.error(err);
@@ -147,22 +148,25 @@ export async function connect(isNew: boolean | MouseEvent = false) {
   } else walletError();
 };
 
-const sendWithCW = async (tx: Tx) => {
+const sendWithCW = async (tx: Tx & {sender: string}) => {
   try {
-    const res = await abortable(cw.sign(tx)) as any;
+    delete tx.meta.sender;
+    const sender = get(accountName);
+    const res = await abortable(cw.sign({...tx, ...tx.meta, ...sender && {sender}})) as any;
     if (res) {
       accountName.set(JSON.parse(res.cmd).meta.sender);
+      wallet.set('cw');
       return sendSigned(res);
     }
     notSigned();
+    txStatus.set('');
   } catch(err) {
     if (err.message.includes('Failed to fetch') && !isErrorOn) {
       isErrorOn = true;
       walletError();
     } else popMessage(err);
-  } finally {
-    txStatus.set('')
-  };
+    txStatus.set('');
+  }
 }
 
 export async function signAndSend(tx: Tx) {
