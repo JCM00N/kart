@@ -1,25 +1,36 @@
  <script lang="ts">
+	import { ModalCtrl } from '@walletconnect/modal-core';
   import Canvas from './Canvas.svelte';
-  import { createImage } from './utility';
-  import Sidebar from './Sidebar.svelte';
+  import Sidebar from './components/Sidebar.svelte';
+  import { createImage, img, pixelMap } from './util/utility';
   import ParamPicker from './ParamPicker.svelte';
   import { toast } from '@zerodevx/svelte-toast';
-  import { accountName, cooldownDate, pickedHexColor, pickedPixelPosition } from './store';
-  import { CHAIN_ID, createCmd, localFetch, signAndSend } from './pact';
-  import { SUCCESS_THEME } from './theme';
+  import { accountName, cooldownDate, isBig, pickedHexColor, pickedPixelPosition, wallet } from './util/store';
+  import { connect, createCmd, localFetch, signAndSend } from './util/pact';
+  import { SUCCESS_THEME } from './util/theme';
   import type { UserPixel } from './types';
-  import { SyncLoader } from 'svelte-loading-spinners';
   import FaGithub from 'svelte-icons/fa/FaGithub.svelte';
   import Dialog from './components/Dialog.svelte';
   import MdHelp from 'svelte-icons/md/MdHelp.svelte'
-  import MdMouse from 'svelte-icons/md/MdMouse.svelte'
+  import { GAS_FOR_ASSIGNMENT, DIMENSIONS, SECTION_SIZE } from './util/consts';
+  import Controller from './Controller.svelte';
+  import InstructionsDialog from './InstructionsDialog.svelte';
   
   let showPixel = false;
   let dialog: HTMLDialogElement;
+  let paramPickerDialog: HTMLDialogElement;
   let userAssignedPixels = [] as UserPixel[];
-  const dataPromise = localFetch('get-canvas').then(({ result: { data } }) => createImage(data));
+  let data: ImageBitmap;
+  ModalCtrl.subscribe(modal => modal.open && paramPickerDialog?.close?.());
 
-  const updateCooldown = () => localFetch(`get-artist-cooldown '${$accountName}`).then(
+  $: createImageBitmap(new ImageData($img, DIMENSIONS, DIMENSIONS)).then(_data => data = _data);
+  for(let x = 0, i = 0; x < DIMENSIONS; x += SECTION_SIZE)
+    for(let y = 0; y < DIMENSIONS; y += SECTION_SIZE)
+      localFetch(
+        `get-section ${x} ${y} ${x + SECTION_SIZE - 1} ${y + SECTION_SIZE - 1}`, undefined, i++
+      ).then(({ result: { data } }) => createImage(data, x, y, SECTION_SIZE));
+
+  const updateCooldown = () => localFetch(`get-artist-cooldown "${$accountName}"`).then(
     ({ result: { data } }) => cooldownDate.set((Date.now() + data * 1e3) + '')
   );
 
@@ -30,7 +41,7 @@
     const color = $pickedHexColor.substring(1);
 
     signAndSend({
-      ...createCmd(`assign-pixel "${color}" ${x} ${y}`),
+      ...createCmd(`assign-pixel "${color}" ${x} ${y}`, GAS_FOR_ASSIGNMENT, $accountName),
       caps: []
     }).then(res => {
       if (!res) return;
@@ -45,45 +56,32 @@
     })
   }
 </script>
-{#await dataPromise}
-  <div class="loader"><SyncLoader size={80} /></div>
-{:then [pixelMap, data]}
-  <Sidebar open={showPixel}>
-    <ParamPicker on:click={assignPixel} on:close={() => showPixel = false} />
+{#if $isBig}
+  <Sidebar open={showPixel} on:click={() => showPixel = false}>
+    <ParamPicker on:click={$accountName || $wallet === 'cw' ? assignPixel : connect} />
   </Sidebar>
-  <Canvas {pixelMap} {data} {userAssignedPixels} bind:showPixel />
-  {#await import('@zerodevx/svelte-toast') then {SvelteToast}}
-    <SvelteToast options={{ pausable: true }} />
-    <div class="bottom">
-      <SvelteToast target="bottom" options={{
-        pausable: true, reversed: true, duration: 6e3, intro: { y: 80 }
-      }}  />
-    </div>
-  {/await}
+{:else}
+  <Dialog bind:dialog={paramPickerDialog}>
+    <ParamPicker on:click={$accountName ? assignPixel : connect} />
+  </Dialog>
+{/if}
+<Canvas pixelMap={$pixelMap} {data} {userAssignedPixels} bind:showPixel />
+{#await import('@zerodevx/svelte-toast') then {SvelteToast}}
+  <SvelteToast options={{ pausable: true }} />
+  <div class="bottom">
+    <SvelteToast target="bottom" options={{
+      pausable: true, reversed: true, duration: 6e3, intro: { y: 80 }
+    }}  />
+  </div>
 {/await}
 <a class="icon github" href="https://github.com/JCM00N/kart">
   <FaGithub />
 </a>
+<Controller dialog={paramPickerDialog} />
 <button class="icon" on:click={() => dialog.showModal()}>
   <MdHelp />
 </button>
-<Dialog bind:dialog title="Hi there!">
-  <p>Use the cursor with by holding <kbd>Left-click</kbd> to drag the canvas around, and <kbd>Scroll</kbd> to zoom.</p>
-  <p>
-    Display the Drawing Drawer by either pressing the <kbd>D</kbd> key, <kbd>Double-click</kbd>ing
-    or <kbd>Right-click</kbd>ing <span><MdMouse /></span> anywhere on the canvas!
-  </p>
-  <p>
-    You can move the targeted pixel of your choice by right-clicking again or using the arrow keys
-    <kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd><kbd>←</kbd>
-  </p>
-  <p>Once you've selected your position and color, simply click "Send" to Sign your transaction and draw your pixel</p>
-  <p>
-    Just make sure you have some KDA on chain #{CHAIN_ID} to pay for the gas
-    (0.01 should be more than enough <span class="emoji">☺️</span>)
-  </p>
-</Dialog>
-
+<InstructionsDialog bind:dialog />
 <style lang="scss">
   .icon {
     color: white;
@@ -98,16 +96,9 @@
     &.github{
       left: unset;
       right: 40px;
+      backdrop-filter: none;
     }
-  }
-  .loader {
-    margin: auto;
-  }
-  span {
-    display: inline-block;
-    width: 24px;
-    vertical-align: middle;
-  }
+  }  
   .bottom {
     --toastContainerBottom: 60px;
     --toastContainerTop: auto;

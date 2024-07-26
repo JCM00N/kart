@@ -1,16 +1,17 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { pinch } from "svelte-gestures";
-  import { DIMENSIONS, MAX_ZOOM, MIN_ZOOM, SCROLL_SENSITIVITY } from "./consts";
-  import { add, clamp, forXY, notInBounds, sub, toXY } from "./utility";
+  import dbltap from "./util/dbltap";
+  import { DIMENSIONS, MAX_ZOOM, MIN_ZOOM, SCROLL_SENSITIVITY } from "./util/consts";
+  import { add, clamp, forXY, notInBounds, sub, toXY } from "./util/utility";
   import { 
     isEyeDropping, isPixelTaken,
     pickedHexColor, hoveredPixelColor,
     pickedPixelPosition, springedPixelPosition
-  } from "./store";
+  } from "./util/store";
   import type { UserPixel } from "./types";
-  import { txStatus } from "./pact";
-  import { drawTarget } from "./util/draw";
+  import { txStatus } from "./util/pact";
+  import { drawBorder, drawTarget, preapreCanvas } from "./util/draw";
 
   export let data: ImageBitmap;
   export let showPixel: boolean;
@@ -19,11 +20,13 @@
   
   let width = window.innerWidth;
 	let height = window.innerHeight;
+  let pointerCount = 0;
   const keyPresses = {} as {[key: string]: boolean | undefined};
   
   let canvas: HTMLCanvasElement;
-  let zoom = 1;
-  let isDragging = false;
+  let zoom = 1, prevBy = 1;
+  let isDragging: boolean | 0 = false;
+  let unsub: () => void;
   let [offset, dragStart, mousePos] = Array.from({ length: 3 }, () => ({ x: 0, y: 0 }));
   
   $: origin = {
@@ -36,23 +39,23 @@
   };
   $: pixelScreenPos = add($springedPixelPosition, origin);
   $: canvasPixelPos = sub(adjustedMousePos, origin);
-  const unsub = pickedPixelPosition.subscribe(pos =>
-    $isPixelTaken = pixelMap[`${pos.x}_${pos.y}`] !== undefined
-  );
+  $: pixelVal = (({x, y}) =>
+    userAssignedPixels.find(p => p.x === x && p.y === y) ?? pixelMap[`${x}_${y}`]
+    )($pickedPixelPosition);
+  $: isPixelTaken.set(pixelVal === undefined ? 'maybe' : pixelVal === null ? '' : 'yes');
   
-  function handlePointerDown(e: MouseEvent) {
+  function handlePointerDown(e: PointerEvent) {
     if (e.button === 2) return; // Right click
 
     if ($isEyeDropping) {
       $pickedHexColor = '#' + Array.from($hoveredPixelColor.slice(0, 3))
         .map(n => n.toString(16).padStart(2, '0')).join('');
       $isEyeDropping = false;
-    }
-    else {
+    } else if (++pointerCount === 1) {
       isDragging = true;
       const pos = toXY(e);
       forXY(xy => dragStart[xy] = pos[xy] / zoom - offset[xy]);
-    }
+    } else isDragging = false;
   }
 
   function handlePointerMove(e: MouseEvent) {
@@ -62,20 +65,30 @@
       forXY(xy => offset[xy] = pos[xy] / zoom - dragStart[xy]);
   }
 
-  function handleOpenMenu() {
-    if (notInBounds(canvasPixelPos)) return;
+  function handleOpenMenu(point = canvasPixelPos) {
+    if (point.x !== canvasPixelPos.x && point.y !== canvasPixelPos.y)
+      point = sub({
+        x: Math.round((point.x - offset.x) / zoom),
+        y: Math.round((point.y - offset.y) / zoom)
+      }, origin);
+    
+    if (notInBounds(point)) return;
 
-    $pickedPixelPosition = {...canvasPixelPos};
+    $pickedPixelPosition = {...point};
     showPixel = true;
   }
 
-  function zoomInOut(by: number, from = adjustedMousePos) {
+  function zoomInOut(by: number, from = adjustedMousePos, isStacked = false) {
     if (isDragging) return;
 
+    const actualChange = isStacked ? prevBy - by : by;
     const prevZoom = zoom;
-    zoom = clamp(MIN_ZOOM, zoom - by, MAX_ZOOM);
+    prevBy = by;
+    if (isStacked && Math.abs(actualChange) > 0.1) return; // Fix issue with use:pinch lib
+    zoom = clamp(MIN_ZOOM, zoom - actualChange, MAX_ZOOM);
+
     if (zoom === prevZoom) return;
-    forXY(xy => offset[xy] += by * from[xy]);
+    forXY(xy => offset[xy] += actualChange * from[xy]);
   }
 
   const handleWheel = (e: WheelEvent) => zoomInOut(e.deltaY * SCROLL_SENSITIVITY);
@@ -91,17 +104,15 @@
       keyPresses.ArrowDown &&  $pickedPixelPosition.y + 1 < DIMENSIONS && ++$pickedPixelPosition.y;
     }
   }
-
-  onMount(() => {
+  
+  function init() {
     const context = canvas.getContext('2d');
-    
-    let anime = requestAnimationFrame(async function update() {
-      context.save();
-      context.imageSmoothingEnabled = false;
-      context.clearRect(0, 0, width, height);
-      context.translate(offset.x, offset.y);
-      context.scale(zoom, zoom);
+    canvas.onpointerleave = canvas.onpointerup = () => isDragging = pointerCount = 0;
+
+    let anime = requestAnimationFrame(function update() {
+      preapreCanvas(context, width, height, offset, zoom);
       context.drawImage(data, origin.x, origin.y);
+      drawBorder(context, origin);
 
       userAssignedPixels.forEach(({x, y, color}) => {
         context.fillStyle = color;
@@ -110,7 +121,7 @@
       
       if (showPixel) {
         context.fillStyle = context.strokeStyle = $pickedHexColor;
-        drawTarget(context, pixelScreenPos, $txStatus === 'signing');
+        drawTarget(context, pixelScreenPos, $txStatus === 'signing' || $txStatus === 'sending');
       }
       if ($isEyeDropping)
         $hoveredPixelColor = context.getImageData(mousePos.x, mousePos.y, 1, 1).data;
@@ -118,21 +129,21 @@
       context.restore();
       anime = requestAnimationFrame(update);
     });
-  
-    return () => {
-      cancelAnimationFrame(anime);
-      unsub();
-    }
-  });
+    return () => cancelAnimationFrame(anime);
+  }
+
+  const callInit = () => unsub = init();
+  onMount(callInit);
 </script>
 
 <svelte:window bind:innerWidth={width} bind:innerHeight={height}
   on:keydown={handleKeyDown} on:keyup={e => delete keyPresses[e.key]}
+  on:visibilitychange={() => (document.hidden ? unsub : callInit)()}
 />
-<canvas bind:this={canvas} {width} {height} style="touch-action: none" use:pinch
+<canvas bind:this={canvas} {width} {height} style="touch-action: none"
   style:cursor={$isEyeDropping ? 'cell' : `grab${isDragging ? 'bing' : ''}`}
-  on:pointerdown={handlePointerDown} on:pointerup={() => isDragging = false}
-  on:pointermove={handlePointerMove} on:wheel|preventDefault={handleWheel}
-  on:contextmenu|preventDefault={handleOpenMenu} on:dblclick={handleOpenMenu} 
-  on:pinch={e => zoomInOut(e.detail.scale, e.detail.center)}
+  on:pointerdown={handlePointerDown} on:pointermove={handlePointerMove}
+  on:wheel|preventDefault={handleWheel} on:contextmenu|preventDefault={handleOpenMenu}
+  on:dblclick={handleOpenMenu} use:dbltap on:dbltap={p => handleOpenMenu(p.detail)}
+  use:pinch on:pinch={e => zoomInOut(e.detail.scale, e.detail.center, true)}
 />

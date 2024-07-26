@@ -14,6 +14,7 @@
     width: 100%;
     display: flex;
     justify-content: center;
+    align-items: center;
     cursor: pointer;
     &:disabled {
       background-color: lightgray;

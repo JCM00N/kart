@@ -1,5 +1,7 @@
-import { CIRCLE } from "../consts";
+import { CIRCLE, DIMENSIONS } from "./consts";
 import type { Point } from "src/types";
+import { pickedHexColor } from "./store";
+import { get } from "svelte/store";
 
 const CIRCLES = Object.entries({
   4: 0,
@@ -9,6 +11,7 @@ const CIRCLES = Object.entries({
 
 export function drawTarget(context: CanvasRenderingContext2D, position: Point, isSigning: boolean) {
   const now = new Date();
+  context.fillStyle = context.strokeStyle = get(pickedHexColor);
 
   CIRCLES.forEach(([r, dashSize]) => {
     context.beginPath();
@@ -36,4 +39,20 @@ export function drawTarget(context: CanvasRenderingContext2D, position: Point, i
   }
   
   now.getSeconds() % 2 && context.fillRect(position.x, position.y, 1, 1);
+}
+
+export function preapreCanvas(
+  context: CanvasRenderingContext2D, width: number, height: number, offset: Point, zoom: number
+) {
+  context.save();
+  context.imageSmoothingEnabled = false;
+  context.clearRect(0, 0, width, height);
+  context.translate(offset.x, offset.y);
+  context.scale(zoom, zoom);
+}
+
+export function drawBorder(context: CanvasRenderingContext2D, origin: Point) {
+  context.lineWidth = 1;
+  context.strokeStyle = 'white';
+  context.strokeRect(origin.x, origin.y, DIMENSIONS, DIMENSIONS);
 }
